@@ -146,9 +146,7 @@ namespace Plon.Menu
             UnityEngine.Object.Destroy(gameObject.GetComponent<BoxCollider>());
             UnityEngine.Object.Destroy(gameObject.GetComponent<Rigidbody>());
             gameObject.transform.parent = menu.transform;
-            if (parentself)
-                gameObject.transform.parent = toOut.transform.parent;
-
+            if (parentself) gameObject.transform.parent = toOut.transform.parent;
             gameObject.transform.rotation = Quaternion.identity;
             gameObject.transform.localPosition = toOut.transform.localPosition;
             gameObject.transform.localScale = toOut.transform.localScale + new Vector3(-0.01f / thickness, 0.01f * thickness, 0.0075f * thickness);
@@ -188,10 +186,7 @@ namespace Plon.Menu
             menuBackground.GetComponent<Renderer>().material.color = backgroundColor.colors[0].color;
             menuBackground.transform.position = new Vector3(0.05f, 0f, 0f);
             menuBackground.GetComponent<Renderer>().material.color = Color.black;
-            if (what3)
-            {
-                OutlineObj(menuBackground, what2, what2, false, 3);
-            }
+            if (what3) OutlineObj(menuBackground, what2, what2, false, 3);
 
 
 
