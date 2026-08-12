@@ -141,30 +141,20 @@ namespace Plon.Menu
         public static bool what3;
 
         public static void OutlineObj(GameObject toOut, Color color1, Color color2, bool parentself = false, float thickness = 1)
-        {
-            GameObject gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            UnityEngine.Object.Destroy(gameObject.GetComponent<BoxCollider>());
-            UnityEngine.Object.Destroy(gameObject.GetComponent<Rigidbody>());
-            gameObject.transform.parent = menu.transform;
-            if (parentself) gameObject.transform.parent = toOut.transform.parent;
-            gameObject.transform.rotation = Quaternion.identity;
-            gameObject.transform.localPosition = toOut.transform.localPosition;
-            gameObject.transform.localScale = toOut.transform.localScale + new Vector3(-0.01f / thickness, 0.01f * thickness, 0.0075f * thickness);
-            GradientColorKey[] array = new GradientColorKey[3];
-            array[0].color = color1;
-            array[0].time = 0f;
-            array[1].color = color2;
-            array[1].time = 0.5f;
-            array[2].color = color1;
-            array[2].time = 1f;
-            ColorChanger colorChanger = gameObject.AddComponent<ColorChanger>();
-            colorChanger.colorInfo = new ExtGradient
-            {
-                colors = array
-            };
-            colorChanger.Start();
-        }
+{
+    GameObject gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+    UnityEngine.Object.Destroy(gameObject.GetComponent<BoxCollider>());
+    UnityEngine.Object.Destroy(gameObject.GetComponent<Rigidbody>());
+    gameObject.transform.parent = menu.transform;
+    if (parentself)
+        gameObject.transform.parent = toOut.transform.parent;
 
+    gameObject.transform.rotation = Quaternion.identity;
+    gameObject.transform.localPosition = toOut.transform.localPosition;
+    gameObject.transform.localScale = toOut.transform.localScale + new Vector3(-0.01f / thickness, 0.01f * thickness, 0.0075f * thickness);
+    Renderer r = gameObject.GetComponent<Renderer>();
+    r.material.color = color1;
+}
 
         // Functions
         public static void CreateMenu()
@@ -406,7 +396,7 @@ namespace Plon.Menu
                         parent = canvasObject.transform
                     }
                 }.AddComponent<Text>();
-                discontext.text = "leave";
+                discontext.text = "Leave";
                 discontext.font = currentFont;
                 discontext.fontSize = 1;
                 discontext.color = textColors[0];
