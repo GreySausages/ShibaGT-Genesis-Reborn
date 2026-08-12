@@ -75,10 +75,6 @@ namespace Plon.Menu
                 new ButtonInfo { buttonText = "Lag All", method =() => mods.LagAll(0.5f, 240), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Lag All v2", method =() => mods.LagAll(3f, 1000), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Lag Spike Gun", method =() => mods.LagGun(8f, 3500), isTogglable = true, toolTip = "placeholder."},
-                new ButtonInfo { buttonText = "Fist Bump Spam Self", method =() => mods.SpamSelf((TagEffects.TagEffectsLibrary.EffectType)3), isTogglable = true,  enabled = false },
-                new ButtonInfo { buttonText = "Fist Bump Spam Others", method =() => mods.SpamOthers((TagEffects.TagEffectsLibrary.EffectType)3),  isTogglable = true, enabled = false },
-                new ButtonInfo { buttonText = "High Five Spam Others", method =() => mods.SpamOthers((TagEffects.TagEffectsLibrary.EffectType)2), isTogglable = true, enabled = false },
-                new ButtonInfo { buttonText = "Super Saiyan All", method =() => mods.SpamOthers(), isTogglable = true, enabled = false },
                 new ButtonInfo { buttonText = "Grey Zone (master)", enableMethod =() => mods.GreyScreen(), disableMethod =() => mods.NoGreyScreen(), isTogglable = true, toolTip = "placeholder."},
             },
 
