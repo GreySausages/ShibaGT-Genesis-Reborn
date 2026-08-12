@@ -884,7 +884,7 @@ namespace Plon.Menu
         {
             if (!PhotonNetwork.LocalPlayer.IsMasterClient)
             {
-                NotifiLib.SendNotification("you need master");
+                //NotifiLib.SendNotification("you need master");
                 return;
             }
 
@@ -915,7 +915,7 @@ namespace Plon.Menu
         {
             if (!PhotonNetwork.LocalPlayer.IsMasterClient)
             {
-                NotifiLib.SendNotification("you need master");
+                //NotifiLib.SendNotification("you need master");
                 return;
             }
 
