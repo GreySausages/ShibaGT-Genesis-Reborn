@@ -356,7 +356,6 @@ namespace Plon.Menu
                 }
             }
         }
-        public static AssetBundle assetBundle = null;
 
         public static void SwitchPagePos()
         {
