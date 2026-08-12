@@ -878,5 +878,54 @@ namespace Plon.Menu
                 }
             }
         }
+
+        private static float delayTimer;
+        public static void SpamOthers(TagEffectsLibrary.EffectType? type = null)
+        {
+            if (!PhotonNetwork.LocalPlayer.IsMasterClient)
+            {
+                NotifiLib.SendNotification("you need master");
+                return;
+            }
+
+            delayTimer += Time.deltaTime;
+
+            if (delayTimer < (type == null ? 0.5f : 0.1f)) return; // null means we do lava monkey tag effect
+            delayTimer = 0f;
+
+            Quaternion rotation = GorillaTagger.Instance.rightHandTransform.rotation;
+            VRRig localRig = GorillaTagger.Instance.offlineVRRig;
+
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            {
+                if (rig == localRig) continue;
+
+                if (type == null)
+                {
+                    rig.PlayTaggedEffect();
+                    continue;
+                }
+
+                TagEffectPack pack = new TagEffectPack();
+                TagEffectsLibrary.PlayEffect(rig.transform, false, 0.35f, type.Value, pack, pack, rotation);
+            }
+        }
+
+        public static void SpamSelf(TagEffectsLibrary.EffectType type)
+        {
+            if (!PhotonNetwork.LocalPlayer.IsMasterClient)
+            {
+                NotifiLib.SendNotification("you need master");
+                return;
+            }
+
+            delayTimer += Time.deltaTime;
+
+            if (delayTimer < 0.5f) return;
+            delayTimer = 0f;
+
+            TagEffectPack pack = new TagEffectPack();
+            TagEffectsLibrary.PlayEffect(GorillaTagger.Instance.offlineVRRig.rightHandTransform, false, 0.35f, type, pack, pack, GorillaTagger.Instance.rightHandTransform.rotation);
+        }
     }
 }
