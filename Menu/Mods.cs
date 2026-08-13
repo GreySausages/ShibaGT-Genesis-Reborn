@@ -809,6 +809,53 @@ namespace Plon.Menu
                 hasTpd = false;
             }
         }
+        private static bool dragging;
+        private static float yaw, pitch, anchorX, anchorY;
+        private const float sensitivity = 360f * 1.33f;
+        private const float speed = 9f;
+
+        public static void WASDFly()
+        {
+            Rigidbody rb = GorillaTagger.Instance.rigidbody;
+            Transform cam = GorillaLocomotion.GTPlayer.Instance.GetControllerTransform(false).parent;
+            rb.linearVelocity = Vector3.zero;
+
+            if (Mouse.current.rightButton.isPressed)
+            {
+                float mx = Mouse.current.position.value.x / Screen.width;
+                float my = Mouse.current.position.value.y / Screen.height;
+
+                if (!dragging)
+                {
+                    dragging = true;
+                    Vector3 e = cam.rotation.eulerAngles;
+                    yaw = e.y;
+                    pitch = e.x > 180f ? e.x - 360f : e.x;
+                    anchorX = mx;
+                    anchorY = my;
+                }
+
+                yaw += (mx - anchorX) * sensitivity;
+                pitch = Mathf.Clamp(pitch - (my - anchorY) * sensitivity, -90f, 90f);
+                anchorX = mx;
+                anchorY = my;
+
+                cam.rotation = Quaternion.Euler(pitch, yaw, 0f);
+            }
+            else
+            {
+                dragging = false;
+            }
+
+            float dt = Time.deltaTime * speed * (UnityInput.Current.GetKey(KeyCode.LeftShift) ? 1.5f : 1f);
+            var t = rb.transform;
+            if (UnityInput.Current.GetKey(KeyCode.W)) t.position += cam.forward * dt;
+            if (UnityInput.Current.GetKey(KeyCode.S)) t.position -= cam.forward * dt;
+            if (UnityInput.Current.GetKey(KeyCode.A)) t.position -= cam.right * dt;
+            if (UnityInput.Current.GetKey(KeyCode.D)) t.position += cam.right * dt;
+            if (UnityInput.Current.GetKey(KeyCode.Space)) t.position += Vector3.up * dt;
+            if (UnityInput.Current.GetKey(KeyCode.LeftControl)) t.position += Vector3.down * dt;
+        }
         public static void NoFinger()
         {
             ControllerInputPoller.instance.leftControllerGripFloat = 0f;
