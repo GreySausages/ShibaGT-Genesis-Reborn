@@ -55,6 +55,7 @@ namespace Plon.Menu
                 new ButtonInfo { buttonText = "Invis Platforms", method =() => mods.Platforms(true), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Noclip (RT)", method =() => mods.Noclip(), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Fly (A)", method =() => mods.CarMonkeyandfly(15f, true), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Wasd Fly", method =() => mods.CarMonkeyandfly(15f, true), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Car Monkey (A)", method =() => mods.CarMonkeyandfly(15f, false), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "TP Gun", method =() => mods.TPGun(), isTogglable = true, toolTip = "placeholder."},
                 new ButtonInfo { buttonText = "Low Gravity", method =() => mods.LowGravity(), isTogglable = true, toolTip = "placeholder."},
