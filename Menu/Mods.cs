@@ -7,36 +7,66 @@ using Photon.Pun;
 using Photon.Realtime;
 using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
-using ShibaGTGenesisReborn.Menu;
-using POpusCodec.Enums;
-using Sirenix.OdinInspector;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using TagEffects;
 using UnityEngine;
 using UnityEngine.InputSystem;
-using UnityEngine.UIElements;
-using static ShibaGTGenesisReborn.Libs.GunLib;
+using Hashtable = ExitGames.Client.Photon.Hashtable;
 using Object = UnityEngine.Object;
 
 namespace ShibaGTGenesisReborn.Menu
 {
     public class mods
     {
-        public static void Disconnect()
+        #region Menu Settings
+        public static int OutlineIndex;
+        public static Color[] outlines =
         {
-            PhotonNetwork.Disconnect();
-        }
+            Color.blue,
+            Color.green,
+            Color.red,
+            Color.yellow,
+            Color.cyan,
+            Color.magenta,
+            Color.white,
+            Color.black,
+            new Color(0.06f, 0.06f, 0.06f),
+            new Color(1f, 0.5f, 0f),
+            new Color(1f, 0.4f, 0.7f),
+            new Color(0.5f, 0f, 1f),
+            new Color(0.6f, 0.3f, 0f),
+            new Color(0.6f, 1f, 0f),
+            new Color(0.2f, 1f, 0.5f),
+            new Color(1f, 0.2f, 0.2f),
+            new Color(0.3f, 0.8f, 1f),
+        };
 
-        public static void Joincodegenesis()
+        public static readonly string[] outnames =
         {
-            PhotonNetworkController.Instance.AttemptToJoinSpecificRoom("GENESIS", GorillaNetworking.JoinType.Solo);
-        }
+            "Blue",
+            "Green",
+            "Red",
+            "Yellow",
+            "Cyan",
+            "Magenta",
+            "White",
+            "Black",
+            "Dark Grey",
+            "Orange",
+            "Pink",
+            "Purple",
+            "Brown",
+            "Lime",
+            "Mint",
+            "Coral",
+            "Sky",
+        };
+
+        public static float notifcooldown;
 
         public static void Save()
         {
@@ -60,6 +90,7 @@ namespace ShibaGTGenesisReborn.Menu
             Directory.CreateDirectory("Genesis");
             File.WriteAllLines("Genesis\\Genesis_Saved_Prefs.txt", list);
         }
+
         public static void Load()
         {
             if (File.Exists("Genesis\\Genesis_Saved_Prefs.txt"))
@@ -98,80 +129,120 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
-        public static void GreyScreen()
+
+        public static void Removeprefs()
         {
-            if (!PhotonNetwork.IsMasterClient) return;
-            GreyZoneManager.Instance.ActivateGreyZoneAuthority();
-        }
-        public static void NoGreyScreen()
-        {
-            if (!PhotonNetwork.IsMasterClient) return;
-            GreyZoneManager.Instance.DeactivateGreyZoneAuthority();
+            if (!File.Exists("Genesis\\Genesis_Saved_Prefs.txt")) return;
+            File.Delete("Genesis\\Genesis_Saved_Prefs.txt");
+            File.Delete("Genesis");
         }
 
-        private static float PullPower = 0.07f;
-        private static float UpHillPower = 0.065f;
-
-        private static bool lastLeftTouch;
-        private static bool lastRightTouch;
-
-        private static string[] pullmodes =
+        public static void SwitchPagePos()
         {
-            "Speed Boost",
-            "Legit",
-            "Reset"
-        };
-
-        private static int pullmodeIndex = 0;
-
-        public static void ChangePullMode()
-        {
-            pullmodeIndex = (pullmodeIndex + 1) % pullmodes.Length;
-
-            switch (pullmodeIndex)
+            if (!Main.what)
             {
-                case 0: // Speed Boost
-                    PullPower = 0.025f;
-                    UpHillPower = 0.02f;
-                    break;
-
-                case 1: // Legit
-                    PullPower = 0.07f;
-                    UpHillPower = 0.065f;
-                    break;
-
-                case 2: // Reset
-                    PullPower = 0.001f;
-                    UpHillPower = 0.001f;
-                    break;
+                Main.what = true;
+                Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
             }
-
-            Main.GetIndex("pullmode").overlapText = "Pull Mode: " + pullmodes[pullmodeIndex];
-        }
-
-        public static void PullMod()
-        {
-            bool leftTouch = GTPlayer.Instance.IsHandTouching(true);
-            bool rightTouch = GTPlayer.Instance.IsHandTouching(false);
-
-            if ((!leftTouch && lastLeftTouch) || (!rightTouch && lastRightTouch))
+            else
             {
-                Vector3 velocity = GorillaTagger.Instance.rigidbody.linearVelocity;
-                GTPlayer.Instance.transform.position += new Vector3(velocity.x * PullPower, velocity.y * UpHillPower, velocity.z * PullPower);
+                Main.what = false;
+                Main.GetIndex("PPos").overlapText = "Menu Layout: ShibaGT";
             }
-
-            lastLeftTouch = leftTouch;
-            lastRightTouch = rightTouch;
         }
 
-        public static void FPS(int aa)
+        public static void ChangeOutlineColor()
         {
-            Application.targetFrameRate = aa;
+            OutlineIndex = (OutlineIndex + 1) % outlines.Length;
+            Main.GetIndex("COC").overlapText = "Outline: " + outnames[OutlineIndex];
+            Main.what2 = outlines[OutlineIndex];
         }
 
+        public static void AntiReport()
+        {
+            foreach (GorillaPlayerScoreboardLine boardline in GorillaScoreboardTotalUpdater.allScoreboardLines)
+            {
+                if (boardline.linePlayer != NetworkSystem.Instance.LocalPlayer || boardline.reportButton == null)
+                {
+                    Transform transform = boardline.reportButton.gameObject.transform;
+                    foreach (VRRig vrrig in VRRigCache.ActiveRigs)
+                    {
+                        if (vrrig == null || vrrig != GorillaTagger.Instance.offlineVRRig)
+                        {
+                            if (Vector3.Distance(vrrig.rightHandTransform.position, transform.position) < 0.4 || Vector3.Distance(vrrig.leftHandTransform.position, transform.position) < 0.4 && Time.time > notifcooldown + 1f)
+                            {
+                                notifcooldown = Time.time;
+                                NetworkSystem.Instance.ReturnToSinglePlayer();
+                                PhotonNetwork.Disconnect();
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region Advantages
         public static string _leavesName;
         public static readonly List<GameObject> leaves = new List<GameObject>();
         private static readonly Dictionary<string, GameObject> objectPool = new Dictionary<string, GameObject>();
+
+        public static void TagGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null &&
+                    !GunLib.LockedPlayer.mainSkin.material.name.Contains("fected") &&
+                    !GunLib.LockedPlayer.isOfflineVRRig)
+                {
+                    if (VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
+                    {
+                        VRRig.LocalRig.enabled = false;
+                        VRRig.LocalRig.rightHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
+                        VRRig.LocalRig.leftHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
+                        VRRig.LocalRig.transform.position = GunLib.LockedPlayer.headConstraint.position;
+                        GameMode.ReportTag(GunLib.LockedPlayer.Creator);
+                        VRRig.LocalRig.enabled = true;
+                    }
+                }
+            }, true);
+        }
+
+        public static void TagPlayer(VRRig p)
+        {
+            if (!p.mainSkin.material.name.Contains("fected") && VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
+            {
+                GorillaGameModes.GameMode.ReportTag(PhotonNetwork.CurrentRoom.GetPlayer(p.Creator.ActorNumber));
+
+                VRRig.LocalRig.enabled = false;
+                VRRig.LocalRig.transform.position = p.headConstraint.position;
+                VRRig.LocalRig.leftHandTransform.position = p.headConstraint.position;
+                VRRig.LocalRig.rightHandTransform.position = p.headConstraint.position;
+                VRRig.LocalRig.enabled = true;
+            }
+        }
+
+        public static void TagAll()
+        {
+            foreach (VRRig p in VRRigCache.ActiveRigs)
+            {
+                if (!p.isOfflineVRRig)
+                {
+                    TagPlayer(p);
+                }
+            }
+        }
+
+        public static void NoTagOnJoin()
+        {
+            PlayerPrefs.SetString("didTutorial", "nope");
+            PlayerPrefs.SetString("tutorial", "nope");
+            Hashtable hasht = new Hashtable();
+            hasht.Add("didTutorial", false);
+            PhotonNetwork.LocalPlayer.SetCustomProperties(hasht, null, null);
+            PlayerPrefs.Save();
+        }
 
         public static void removeleaves()
         {
@@ -230,75 +301,165 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
+
         public static void addleaves()
         {
             foreach (var l in leaves)
                 l.SetActive(true);
             leaves.Clear();
         }
-        public static string lastmap;
-        public static void JoinRandom()
+
+        public static void FPS(int aa)
         {
-            if (PhotonNetworkController.Instance.currentJoinTrigger.networkZone != null)
-            {
-                lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
-            }
-            if (!PhotonNetwork.InRoom)
-            {
-                PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap), GorillaNetworking.JoinType.Solo);
-            }
+            Application.targetFrameRate = aa;
         }
-        public static int OutlineIndex;
-        public static Color[] outlines =
+        #endregion
+
+        #region Movement
+        private static float PullPower = 0.07f;
+        private static float UpHillPower = 0.065f;
+        private static bool lastLeftTouch;
+        private static bool lastRightTouch;
+
+        private static string[] pullmodes =
+        {
+            "Speed Boost",
+            "Legit",
+            "Reset"
+        };
+
+        private static int pullmodeIndex = 0;
+
+        private static int Platcolor;
+        private static Color PlatColor = Color.blue;
+        public static readonly Color[] PlatColors =
         {
             Color.blue,
-            Color.green,
             Color.red,
-            Color.yellow,
+            Color.green,
             Color.cyan,
             Color.magenta,
-            new Color(0.06f, 0.06f, 0.06f),
         };
-        public static readonly string[] outnames =
+
+        public static readonly string[] ColorNames =
         {
             "Blue",
-            "Green",
             "Red",
-            "Yellow",
+            "Green",
             "Cyan",
             "Magenta",
-            "Grey",
         };
-        public static void ChangeOutlineColor()
-        {
-            OutlineIndex = (OutlineIndex + 1) % outlines.Length;
-            Main.GetIndex("COC").overlapText = "Outline: " + outnames[OutlineIndex];
-            Main.what2 = outlines[OutlineIndex];
-        }
-        public static void Removeprefs()
-        {
-            if (!File.Exists("Genesis\\Genesis_Saved_Prefs.txt")) return;
-            File.Delete("Genesis\\Genesis_Saved_Prefs.txt");
-            File.Delete("Genesis");
-        }
 
-        public static bool G = false;
-        public static bool hasTpd = false;
-        public static float num = 8f;
-
-        public static void EquipGun()
-        {
-            GunLib.StartGun(() =>
-            {
-                G = !G;
-                if (!G)
-                {
-                    GunLib.CleanupPointer();
-                }
-            }, false);
-        }
+        private static GameObject PlatR, PlatL = null;
+        private static Vector3 scale = new Vector3(0.0125f, 0.28f, 0.3825f);
 
         private static bool teleportGunPressed;
+
+        public static GameObject checkpoint;
+        private static bool teleporting;
+        private static float teleportTime;
+
+        private static bool dragging;
+        private static float yaw, pitch, anchorX, anchorY;
+        private const float sensitivity = 360f * 1.33f;
+        private const float speed = 9f;
+
+        public static void Platforms(bool Invis = false)
+        {
+            if (InputHandler.Instance.RightTrigger.IsPressed && PlatR == null)
+            {
+                PlatR = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                PlatR.transform.localScale = scale;
+                PlatR.transform.position = GorillaTagger.Instance.rightHandTransform.position;
+                PlatR.transform.rotation = GorillaTagger.Instance.rightHandTransform.rotation;
+                GameObject.Destroy(PlatR.GetComponent<Rigidbody>());
+                PlatR.GetComponent<Renderer>().material.color = PlatColor;
+                if (Invis) GameObject.Destroy(PlatR.GetComponent<Renderer>());
+            }
+            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL == null)
+            {
+                PlatL = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                PlatL.transform.localScale = scale;
+                PlatL.transform.position = GorillaTagger.Instance.leftHandTransform.position;
+                PlatL.transform.rotation = GorillaTagger.Instance.leftHandTransform.rotation;
+                GameObject.Destroy(PlatL.GetComponent<Rigidbody>());
+                PlatL.GetComponent<Renderer>().material.color = PlatColor;
+                if (Invis) GameObject.Destroy(PlatL.GetComponent<Renderer>());
+            }
+            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL != null)
+            {
+                GameObject.Destroy(PlatL);
+                PlatL = null;
+            }
+        }
+
+        public static void PlatColorChange()
+        {
+            Platcolor = (Platcolor + 1) % PlatColors.Length;
+            Main.GetIndex("Change Plat Color").overlapText = "Plat Color: " + ColorNames[Platcolor];
+            PlatColor = PlatColors[Platcolor];
+        }
+
+        public static void Noclip()
+        {
+            MeshCollider[] colliders = Resources.FindObjectsOfTypeAll<MeshCollider>();
+            foreach (MeshCollider collider in colliders)
+            {
+                collider.enabled = !(InputHandler.Instance.RightTrigger.IsPressed);
+            }
+        }
+
+        public static void CarMonkeyandfly(float speed, bool fly)
+        {
+            if (InputHandler.Instance.RightSecondary.IsPressed)
+            {
+                GorillaLocomotion.GTPlayer.Instance.transform.position += GorillaLocomotion.GTPlayer.Instance.headCollider.transform.forward * Time.deltaTime * speed;
+                if (fly) GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+            }
+        }
+
+        public static void WASDFly()
+        {
+            Rigidbody rb = GorillaTagger.Instance.rigidbody;
+            Transform cam = GorillaLocomotion.GTPlayer.Instance.GetControllerTransform(false).parent;
+            rb.linearVelocity = Vector3.zero;
+
+            if (Mouse.current.rightButton.isPressed)
+            {
+                float mx = Mouse.current.position.value.x / Screen.width;
+                float my = Mouse.current.position.value.y / Screen.height;
+
+                if (!dragging)
+                {
+                    dragging = true;
+                    Vector3 e = cam.rotation.eulerAngles;
+                    yaw = e.y;
+                    pitch = e.x > 180f ? e.x - 360f : e.x;
+                    anchorX = mx;
+                    anchorY = my;
+                }
+
+                yaw += (mx - anchorX) * sensitivity;
+                pitch = Mathf.Clamp(pitch - (my - anchorY) * sensitivity, -90f, 90f);
+                anchorX = mx;
+                anchorY = my;
+
+                cam.rotation = Quaternion.Euler(pitch, yaw, 0f);
+            }
+            else
+            {
+                dragging = false;
+            }
+
+            float dt = Time.deltaTime * speed * (UnityInput.Current.GetKey(KeyCode.LeftShift) ? 1.5f : 1f);
+            var t = rb.transform;
+            if (UnityInput.Current.GetKey(KeyCode.W)) t.position += cam.forward * dt;
+            if (UnityInput.Current.GetKey(KeyCode.S)) t.position -= cam.forward * dt;
+            if (UnityInput.Current.GetKey(KeyCode.A)) t.position -= cam.right * dt;
+            if (UnityInput.Current.GetKey(KeyCode.D)) t.position += cam.right * dt;
+            if (UnityInput.Current.GetKey(KeyCode.Space)) t.position += Vector3.up * dt;
+            if (UnityInput.Current.GetKey(KeyCode.LeftControl)) t.position += Vector3.down * dt;
+        }
 
         public static void TeleportGun()
         {
@@ -328,9 +489,87 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public static GameObject checkpoint;
-        private static bool teleporting;
-        private static float teleportTime;
+        public static void PullMod()
+        {
+            bool leftTouch = GTPlayer.Instance.IsHandTouching(true);
+            bool rightTouch = GTPlayer.Instance.IsHandTouching(false);
+
+            if ((!leftTouch && lastLeftTouch) || (!rightTouch && lastRightTouch))
+            {
+                Vector3 velocity = GorillaTagger.Instance.rigidbody.linearVelocity;
+                GTPlayer.Instance.transform.position += new Vector3(velocity.x * PullPower, velocity.y * UpHillPower, velocity.z * PullPower);
+            }
+
+            lastLeftTouch = leftTouch;
+            lastRightTouch = rightTouch;
+        }
+
+        public static void ChangePullMode()
+        {
+            pullmodeIndex = (pullmodeIndex + 1) % pullmodes.Length;
+
+            switch (pullmodeIndex)
+            {
+                case 0:
+                    PullPower = 0.025f;
+                    UpHillPower = 0.02f;
+                    break;
+
+                case 1:
+                    PullPower = 0.07f;
+                    UpHillPower = 0.065f;
+                    break;
+
+                case 2:
+                    PullPower = 0.001f;
+                    UpHillPower = 0.001f;
+                    break;
+            }
+
+            Main.GetIndex("pullmode").overlapText = "Pull Mode: " + pullmodes[pullmodeIndex];
+        }
+
+        public static void GravityManager(Gravitytypes type)
+        {
+            switch (type)
+            {
+                case Gravitytypes.Low:
+                    GorillaTagger.Instance.rigidbody.AddForce(Vector3.up * 6.57f, ForceMode.Acceleration);
+                    break;
+                case Gravitytypes.High:
+                    GorillaTagger.Instance.rigidbody.AddForce(Vector3.down * 7.67f, ForceMode.Acceleration);
+                    break;
+                case Gravitytypes.Zero:
+                    GorillaTagger.Instance.rigidbody.AddForce(-Physics.gravity, ForceMode.Acceleration);
+                    break;
+                case Gravitytypes.Reverse:
+                    GorillaTagger.Instance.rigidbody.AddForce(-Physics.gravity * 3f, ForceMode.Acceleration);
+                    GTPlayer.Instance.GetControllerTransform(false).parent.rotation = Quaternion.Euler(180f, 0f, 0f);
+                    break;
+            }
+        }
+
+        public static void Reset_upsidedown() => GTPlayer.Instance.GetControllerTransform(false).parent.rotation = Quaternion.identity;
+
+        public enum Gravitytypes
+        {
+            Low,
+            High,
+            Zero,
+            Reverse
+        }
+
+        public static void UpAndDown()
+        {
+            if (InputHandler.Instance.RightTrigger.IsPressed)
+            {
+                GorillaTagger.Instance.rigidbody.AddForce(GTPlayer.Instance.bodyCollider.transform.up * 20f * Time.deltaTime, ForceMode.VelocityChange);
+            }
+            if (InputHandler.Instance.LeftTrigger.IsPressed)
+            {
+                GorillaTagger.Instance.rigidbody.AddForce(-GTPlayer.Instance.bodyCollider.transform.up * 20f * Time.deltaTime, ForceMode.VelocityChange);
+            }
+        }
 
         public static void CheckPoint()
         {
@@ -340,8 +579,8 @@ namespace ShibaGTGenesisReborn.Menu
                 {
                     checkpoint = GameObject.CreatePrimitive(PrimitiveType.Sphere);
 
-                    UnityEngine.Object.Destroy(checkpoint.GetComponent<Rigidbody>());
-                    UnityEngine.Object.Destroy(checkpoint.GetComponent<SphereCollider>());
+                    Object.Destroy(checkpoint.GetComponent<Rigidbody>());
+                    Object.Destroy(checkpoint.GetComponent<SphereCollider>());
 
                     checkpoint.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
                 }
@@ -365,7 +604,7 @@ namespace ShibaGTGenesisReborn.Menu
 
                 checkpoint.GetComponent<Renderer>().material.color = color;
 
-                CXS.CXS.TeleportPlayer(checkpoint.transform.position); // why not
+                CXS.CXS.TeleportPlayer(checkpoint.transform.position);
 
                 GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
             }
@@ -388,16 +627,16 @@ namespace ShibaGTGenesisReborn.Menu
                 checkpoint.GetComponent<Renderer>().material.color = color;
             }
         }
+
         public static void CheckPointDisable()
         {
             if (checkpoint != null)
             {
-                UnityEngine.Object.Destroy(checkpoint);
+                Object.Destroy(checkpoint);
                 checkpoint = null;
             }
         }
 
-        // ShibaGTGenesisReborn is a fat little chud, chud ,chud ,chud ,chud ,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud,chud
         public static void Noclipistuff(bool b)
         {
             foreach (MeshCollider collider in Resources.FindObjectsOfTypeAll<MeshCollider>())
@@ -412,158 +651,30 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
+        #endregion
 
-        public static void TagGun()
+        #region Visuals
+        public static void Tracers()
         {
-            GunLib.StartGun(() =>
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
             {
-                if (GunLib.LockedPlayer != null &&
-                    !GunLib.LockedPlayer.mainSkin.material.name.Contains("fected") &&
-                    !GunLib.LockedPlayer.isOfflineVRRig)
+                if (!rig.isOfflineVRRig)
                 {
-                    if (VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
-                    {
-                        VRRig.LocalRig.enabled = false;
-                        VRRig.LocalRig.rightHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
-                        VRRig.LocalRig.leftHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
-                        VRRig.LocalRig.transform.position = GunLib.LockedPlayer.headConstraint.position;
-                        GameMode.ReportTag(GunLib.LockedPlayer.Creator);
-                        VRRig.LocalRig.enabled = true;
-                    }
+                    GameObject g = new GameObject("Line");
+                    LineRenderer l = g.AddComponent<LineRenderer>();
+                    l.startWidth = 0.01f;
+                    l.endWidth = 0.01f;
+                    l.positionCount = 2;
+                    l.useWorldSpace = true;
+                    l.SetPosition(0, GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position);
+                    l.SetPosition(1, rig.transform.position);
+                    l.material.shader = Shader.Find("GUI/Text Shader");
+                    l.startColor = rig.playerColor;
+                    l.endColor = rig.playerColor;
+                    Object.Destroy(l, Time.deltaTime);
                 }
-            }, true);
-        }
-
-        public static void ShibaGun()
-        {
-            GunLib.StartGun(() =>
-            {
-                Vector3 funn = (GunLib.GetPointerPos() - GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position).normalized;
-                funn *= 60f;
-
-                GameObject shiba = Main.LoadAssetBundle("shiba");
-                shiba.transform.localScale /= 3f;
-                shiba.transform.position = GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position;
-                shiba.transform.rotation = GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.rotation;
-
-                Object.Destroy(shiba.GetComponent<Rigidbody>());
-                Object.Destroy(shiba.GetComponent<BoxCollider>());
-
-                shiba.transform.Find("Handle1").AddComponent<BoxCollider>();
-                shiba.transform.Find("Handle1").AddComponent<Rigidbody>();
-                shiba.transform.Find("Handle1").GetComponent<Rigidbody>().velocity = funn;
-
-                shiba.gameObject.layer = 8;
-                shiba.transform.Find("Handle1").gameObject.layer = 8;
-                shiba.transform.Find("Handle1").name = string.Concat(shiba.name, "MonoObject");
-
-                Object.Destroy(shiba, 15f);
-            }, false);
-        }
-
-        public static void LagGun(float delay, int hm)
-        {
-            GunLib.StartGun(() =>
-            {
-                if (GunLib.LockedPlayer != null)
-                {
-                    if (Time.time > CDown)
-                    {
-                        for (int i = 0; i < hm; i++)
-                        {
-                            SendOPRaiseEvent202(GunLib.LockedPlayer);
-                        }
-                        CDown = Time.time + delay;
-                    }
-                }
-            }, true);
-        }
-
-        public static void FlingGun()
-        {
-            GunLib.StartGun(() =>
-            {
-                if (GunLib.LockedPlayer != null)
-                {
-                    VRRig.LocalRig.enabled = false;
-                    GorillaTagger.Instance.offlineVRRig.enabled = false;
-                    VRRig.LocalRig.transform.position = GunLib.LockedPlayer.transform.position;
-                    SnowballSpam1(-GunLib.LockedPlayer.transform.up * 20f, GunLib.LockedPlayer.transform.position - new Vector3(0f, -0.3f, 0f));
-                }
-            }, true);
-        }
-
-        public static void GunSmoothNess()
-        {
-            if (num == 8f)
-            {
-                num = 66f;
-                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Keyboard";
-            }
-            else if (num == 66f)
-            {
-                num = 144f;
-                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Thick";
-            }
-            else
-            {
-                num = 8;
-                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Normal";
             }
         }
-
-        public static void RPCProt()
-        {
-            if (!PhotonNetwork.InRoom) return;
-            try
-            {
-                MonkeAgent.instance.rpcErrorMax = int.MaxValue;
-                MonkeAgent.instance.rpcCallLimit = int.MaxValue;
-                MonkeAgent.instance.logErrorMax = int.MaxValue;
-
-                MonkeAgent.instance.userRPCCalls.Clear();
-
-                Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
-                GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
-
-                PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
-                PhotonNetwork.QuickResends = int.MaxValue;
-            }
-            catch { }
-        }
-
-        public static bool enablebracelet;
-        public static void BraceletSpam()
-        {
-            if (Time.time > delay + 0.1f)
-            {
-                enablebracelet = !enablebracelet;
-                GorillaTagger.Instance.myVRRig.SendRPC("EnableNonCosmeticHandItemRPC", RpcTarget.All, enablebracelet, false);
-                delay = Time.time;
-            }
-        }
-
-        public static void NoBracelet()
-        {
-            GorillaTagger.Instance.myVRRig.SendRPC("EnableNonCosmeticHandItemRPC", RpcTarget.All, false, false);
-        }
-
-        public static void SoundSpammer(int id = 18)
-        {
-            if (!PhotonNetwork.InRoom) return;
-            if (Time.time > delay && InputHandler.Instance.RightTrigger.IsPressed)
-            {
-                delay = Time.time + 0.1f;
-                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlayHandTap", RpcTarget.All, new object[]
-                {
-                    id,
-                    false,
-                    999f
-                });
-                RPCProt();
-            }
-        }
-
 
         public static void FullBodyESP()
         {
@@ -616,51 +727,77 @@ namespace ShibaGTGenesisReborn.Menu
 
             GorillaTagger.Instance.myVRRig.SendRPC("RPC_InitializeNoobMaterial", RpcTarget.All, c.r, c.g, c.b);
         }
+        #endregion
 
-        public static void Tracers()
+        #region Overpowered
+        public static float tagTimer;
+        public static float CDown;
+
+        public static void LagGun(float delay, int hm)
         {
-            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            GunLib.StartGun(() =>
             {
-                if (!rig.isOfflineVRRig)
+                if (GunLib.LockedPlayer != null)
                 {
-                    GameObject g = new GameObject("Line");
-                    LineRenderer l = g.AddComponent<LineRenderer>();
-                    l.startWidth = 0.01f;
-                    l.endWidth = 0.01f;
-                    l.positionCount = 2;
-                    l.useWorldSpace = true;
-                    l.SetPosition(0, GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position);
-                    l.SetPosition(1, rig.transform.position);
-                    l.material.shader = Shader.Find("GUI/Text Shader");
-                    l.startColor = rig.playerColor;
-                    l.endColor = rig.playerColor;
-                    GameObject.Destroy(l, Time.deltaTime);
+                    if (Time.time > CDown)
+                    {
+                        for (int i = 0; i < hm; i++)
+                        {
+                            SendOPRaiseEvent202(GunLib.LockedPlayer);
+                        }
+                        CDown = Time.time + delay;
+                    }
                 }
+            }, true);
+        }
+
+        public static void LagAll(float delay, int hm)
+        {
+            if (Time.time > CDown)
+            {
+                for (int i = 0; i < hm; i++)
+                {
+                    SendOPRaiseEvent202();
+                }
+                CDown = Time.time + delay;
             }
         }
 
-        public static void SwitchPagePos()
+        public static void SendOPRaiseEvent202(VRRig p = null)
         {
-            if (!Main.what)
+            RaiseEventOptions o;
+            if (p != null)
             {
-                Main.what = true;
-                Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
+                o = new RaiseEventOptions { TargetActors = new int[] { p.Creator.ActorNumber } };
             }
             else
             {
-                Main.what = false;
-                Main.GetIndex("PPos").overlapText = "Menu Layout: ShibaGT";
+                o = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
             }
+            PhotonNetwork.NetworkingClient.OpRaiseEvent(202, new object[]
+            {
+                "ello"
+            }, o, SendOptions.SendUnreliable);
+            RPCProt();
         }
+        #endregion
 
-        public static void NoTagOnJoin()
+        #region Fun
+        public static float delay;
+        public static bool enablebracelet;
+        static GameObject cat = null;
+
+        public static void HoverboardSpam()
         {
-            PlayerPrefs.SetString("didTutorial", "nope");
-            PlayerPrefs.SetString("tutorial", "nope");
-            Hashtable hasht = new Hashtable();
-            hasht.Add("didTutorial", false);
-            PhotonNetwork.LocalPlayer.SetCustomProperties(hasht, null, null);
-            PlayerPrefs.Save();
+            if (!PhotonNetwork.InRoom) return;
+            if (InputHandler.Instance.RightGrip.IsPressed)
+            {
+                if (Time.time > delay + 0.3f)
+                {
+                    delay = Time.time;
+                    FreeHoverboardManager.instance.SendDropBoardRPC(GorillaTagger.Instance.rightHandTransform.position, Quaternion.identity, GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f, false), GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f, false), Color.black);
+                }
+            }
         }
 
         public static void WaterSplash()
@@ -684,360 +821,36 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public static void GravityManager(Gravitytypes type)
+        public static void BraceletSpam()
         {
-            switch (type)
+            if (Time.time > delay + 0.1f)
             {
-                case Gravitytypes.Low:
-                    GorillaTagger.Instance.rigidbody.AddForce(Vector3.up * 6.57f, ForceMode.Acceleration);
-                    break;
-                case Gravitytypes.High:
-                    GorillaTagger.Instance.rigidbody.AddForce(Vector3.down * 7.67f, ForceMode.Acceleration); // omg 67
-                    break;
-                case Gravitytypes.Zero:
-                    GorillaTagger.Instance.rigidbody.AddForce(-Physics.gravity, ForceMode.Acceleration); // trying a new zero grav since the old one was weird.
-                    break;
-                case Gravitytypes.Reverse:
-                    GorillaTagger.Instance.rigidbody.AddForce(-Physics.gravity * 3f, ForceMode.Acceleration);
-                    GTPlayer.Instance.GetControllerTransform(false).parent.rotation = Quaternion.Euler(180f, 0f, 0f); // I like the turning feature on the S menu so I added it
-                    break;
+                enablebracelet = !enablebracelet;
+                GorillaTagger.Instance.myVRRig.SendRPC("EnableNonCosmeticHandItemRPC", RpcTarget.All, enablebracelet, false);
+                delay = Time.time;
             }
         }
 
-        public static void Reset_upsidedown() => GTPlayer.Instance.GetControllerTransform(false).parent.rotation = Quaternion.identity;
-
-        public enum Gravitytypes
+        public static void NoBracelet()
         {
-            Low,
-            High,
-            Zero,
-            Reverse
+            GorillaTagger.Instance.myVRRig.SendRPC("EnableNonCosmeticHandItemRPC", RpcTarget.All, false, false);
         }
 
-        public static void Noclip()
-        {
-            MeshCollider[] colliders = Resources.FindObjectsOfTypeAll<MeshCollider>();
-            foreach (MeshCollider collider in colliders)
-            {
-                collider.enabled = !(InputHandler.Instance.RightTrigger.IsPressed);
-            }
-        }
-
-        private static int Platcolor;
-        private static Color PlatColor = Color.blue;
-        public static readonly Color[] PlatColors =
-        {
-            Color.blue,
-            Color.red,
-            Color.green,
-            Color.cyan,
-            Color.magenta,
-        };
-        public static readonly string[] ColorNames =
-        {
-            "Blue",
-            "Red",
-            "Green",
-            "Cyan",
-            "Magenta",
-        };
-        public static void PlatColorChange()
-        {
-            Platcolor = (Platcolor + 1) % PlatColors.Length;
-            Main.GetIndex("Change Plat Color").overlapText = "Plat Color: " + ColorNames[Platcolor];
-            PlatColor = PlatColors[Platcolor];
-        }
-
-        public static float delay;
-        public static void HoverboardSpam()
+        public static void SoundSpammer(int id = 18)
         {
             if (!PhotonNetwork.InRoom) return;
-            if (InputHandler.Instance.RightGrip.IsPressed)
+            if (Time.time > delay && InputHandler.Instance.RightTrigger.IsPressed)
             {
-                if (Time.time > delay + 0.3f)
+                delay = Time.time + 0.1f;
+                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlayHandTap", RpcTarget.All, new object[]
                 {
-                    delay = Time.time;
-                    FreeHoverboardManager.instance.SendDropBoardRPC(GorillaTagger.Instance.rightHandTransform.position, Quaternion.identity, GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f, false), GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f, false), Color.black);
-                }
+                    id,
+                    false,
+                    999f
+                });
+                RPCProt();
             }
         }
-
-        public static void UpAndDown()
-        {
-            if (InputHandler.Instance.RightTrigger.IsPressed)
-            {
-                GorillaTagger.Instance.rigidbody.AddForce(GTPlayer.Instance.bodyCollider.transform.up * 20f * Time.deltaTime, ForceMode.VelocityChange);
-
-            }
-            if (InputHandler.Instance.LeftTrigger.IsPressed)
-            {
-                GorillaTagger.Instance.rigidbody.AddForce(-GTPlayer.Instance.bodyCollider.transform.up * 20f * Time.deltaTime, ForceMode.VelocityChange);
-            }
-        }
-
-        public static void BDisconnect()
-        {
-            if (InputHandler.Instance.RightSecondary.IsPressed)
-            {
-                PhotonNetwork.Disconnect();
-                NetworkSystem.Instance.ReturnToSinglePlayer();
-            }
-        }
-
-        private static GameObject PlatR, PlatL = null;
-        private static Vector3 scale = new Vector3(0.0125f, 0.28f, 0.3825f);
-        public static void Platforms(bool Invis = false)
-        {
-            if (InputHandler.Instance.RightTrigger.IsPressed && PlatR == null)
-            {
-                PlatR = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                PlatR.transform.localScale = scale;
-                PlatR.transform.position = GorillaTagger.Instance.rightHandTransform.position;
-                PlatR.transform.rotation = GorillaTagger.Instance.rightHandTransform.rotation;
-                GameObject.Destroy(PlatR.GetComponent<Rigidbody>());
-                PlatR.GetComponent<Renderer>().material.color = PlatColor;
-                if (Invis) GameObject.Destroy(PlatR.GetComponent<Renderer>());
-            }
-            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL == null)
-            {
-                PlatL = GameObject.CreatePrimitive(PrimitiveType.Cube);
-                PlatL.transform.localScale = scale;
-                PlatL.transform.position = GorillaTagger.Instance.leftHandTransform.position;
-                PlatL.transform.rotation = GorillaTagger.Instance.leftHandTransform.rotation;
-                GameObject.Destroy(PlatL.GetComponent<Rigidbody>());
-                PlatL.GetComponent<Renderer>().material.color = PlatColor;
-                if (Invis) GameObject.Destroy(PlatL.GetComponent<Renderer>());
-            }
-            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL != null)
-            {
-                GameObject.Destroy(PlatL);
-                PlatL = null;
-            }
-        }
-
-        public static void CarMonkeyandfly(float speed, bool fly)
-        {
-            if (InputHandler.Instance.RightSecondary.IsPressed)
-            {
-                GorillaLocomotion.GTPlayer.Instance.transform.position += GorillaLocomotion.GTPlayer.Instance.headCollider.transform.forward * Time.deltaTime * speed;
-                if (fly) GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
-            }
-        }
-
-        public static float tagTimer;
-
-        public static void SendOPRaiseEvent202(VRRig p = null)
-        {
-            RaiseEventOptions o;
-            if (p != null)
-            {
-                o = new RaiseEventOptions { TargetActors = new int[] { p.Creator.ActorNumber } };
-            }
-            else
-            {
-                o = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-            }
-            PhotonNetwork.NetworkingClient.OpRaiseEvent(202, new object[]
-            {
-                "ello"
-            }, o, SendOptions.SendUnreliable);
-            RPCProt();
-        }
-
-        public static float CDown;
-        public static void LagAll(float delay, int hm)
-        {
-            if (Time.time > CDown)
-            {
-                for (int i = 0; i < hm; i++)
-                {
-                    SendOPRaiseEvent202();
-                }
-                CDown = Time.time + delay;
-            }
-        }
-
-        private static bool Ghost_Toggled = false;
-        private static bool Invis_Toggled = false;
-
-        public static void GhostMonke()
-        {
-            bool isPressed = InputHandler.Instance.LeftPrimary.WasPressed;
-
-            if (isPressed)
-            {
-                Ghost_Toggled = !Ghost_Toggled;
-                VRRig.LocalRig.enabled = !Ghost_Toggled;
-            }
-        }
-
-        public static void InvisMonke()
-        {
-            if (InputHandler.Instance.RightPrimary.WasPressed)
-                Invis_Toggled = !Invis_Toggled;
-
-            if (Invis_Toggled)
-            {
-                VRRig.LocalRig.enabled = false;
-                VRRig.LocalRig.transform.position = new Vector3(0f, -100f, 0f);
-            }
-            else
-            {
-                VRRig.LocalRig.enabled = true;
-            }
-        }
-
-        public static void placeholder()
-        {
-
-        }
-
-        public static float notifcooldown;
-        public static void AntiReport()
-        {
-            foreach (GorillaPlayerScoreboardLine boardline in GorillaScoreboardTotalUpdater.allScoreboardLines)
-            {
-                if (boardline.linePlayer != NetworkSystem.Instance.LocalPlayer || boardline.reportButton == null)
-                {
-                    Transform transform = boardline.reportButton.gameObject.transform;
-                    foreach (VRRig vrrig in VRRigCache.ActiveRigs)
-                    {
-                        if (vrrig == null || vrrig != GorillaTagger.Instance.offlineVRRig)
-                        {
-                            if (Vector3.Distance(vrrig.rightHandTransform.position, transform.position) < 0.4 || Vector3.Distance(vrrig.leftHandTransform.position, transform.position) < 0.4 && Time.time > notifcooldown + 1f)
-                            {
-                                notifcooldown = Time.time;
-                                NetworkSystem.Instance.ReturnToSinglePlayer();
-                                PhotonNetwork.Disconnect();
-                                return;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        public static void LongArms()
-        {
-            if (InputHandler.Instance.RightTrigger.IsPressed)
-            {
-                GTPlayer.Instance.transform.localScale += new Vector3(0.01f, 0.01f, 0.01f);
-            }
-            if (InputHandler.Instance.LeftTrigger.IsPressed)
-            {
-                GTPlayer.Instance.transform.localScale -= new Vector3(0.01f, 0.01f, 0.01f);
-            }
-        }
-
-        public static void NormalArms()
-        {
-            GTPlayer.Instance.transform.localScale = new Vector3(1f, 1f, 1f);
-        }
-
-        private static bool dragging;
-        private static float yaw, pitch, anchorX, anchorY;
-        private const float sensitivity = 360f * 1.33f;
-        private const float speed = 9f;
-
-        public static void WASDFly()
-        {
-            Rigidbody rb = GorillaTagger.Instance.rigidbody;
-            Transform cam = GorillaLocomotion.GTPlayer.Instance.GetControllerTransform(false).parent;
-            rb.linearVelocity = Vector3.zero;
-
-            if (Mouse.current.rightButton.isPressed)
-            {
-                float mx = Mouse.current.position.value.x / Screen.width;
-                float my = Mouse.current.position.value.y / Screen.height;
-
-                if (!dragging)
-                {
-                    dragging = true;
-                    Vector3 e = cam.rotation.eulerAngles;
-                    yaw = e.y;
-                    pitch = e.x > 180f ? e.x - 360f : e.x;
-                    anchorX = mx;
-                    anchorY = my;
-                }
-
-                yaw += (mx - anchorX) * sensitivity;
-                pitch = Mathf.Clamp(pitch - (my - anchorY) * sensitivity, -90f, 90f);
-                anchorX = mx;
-                anchorY = my;
-
-                cam.rotation = Quaternion.Euler(pitch, yaw, 0f);
-            }
-            else
-            {
-                dragging = false;
-            }
-
-            float dt = Time.deltaTime * speed * (UnityInput.Current.GetKey(KeyCode.LeftShift) ? 1.5f : 1f);
-            var t = rb.transform;
-            if (UnityInput.Current.GetKey(KeyCode.W)) t.position += cam.forward * dt;
-            if (UnityInput.Current.GetKey(KeyCode.S)) t.position -= cam.forward * dt;
-            if (UnityInput.Current.GetKey(KeyCode.A)) t.position -= cam.right * dt;
-            if (UnityInput.Current.GetKey(KeyCode.D)) t.position += cam.right * dt;
-            if (UnityInput.Current.GetKey(KeyCode.Space)) t.position += Vector3.up * dt;
-            if (UnityInput.Current.GetKey(KeyCode.LeftControl)) t.position += Vector3.down * dt;
-        }
-
-        public static void NoFinger()
-        {
-            ControllerInputPoller.instance.leftControllerGripFloat = 0f;
-            ControllerInputPoller.instance.rightControllerGripFloat = 0f;
-            ControllerInputPoller.instance.leftControllerIndexFloat = 0f;
-            ControllerInputPoller.instance.rightControllerIndexFloat = 0f;
-            ControllerInputPoller.instance.leftControllerPrimaryButton = false;
-            ControllerInputPoller.instance.leftControllerSecondaryButton = false;
-            ControllerInputPoller.instance.rightControllerPrimaryButton = false;
-            ControllerInputPoller.instance.rightControllerSecondaryButton = false;
-            ControllerInputPoller.instance.leftControllerPrimaryButtonTouch = false;
-            ControllerInputPoller.instance.leftControllerSecondaryButtonTouch = false;
-            ControllerInputPoller.instance.rightControllerPrimaryButtonTouch = false;
-            ControllerInputPoller.instance.rightControllerSecondaryButtonTouch = false;
-        }
-
-        public static void SpazRig()
-        {
-            System.Random random = new System.Random();
-            GorillaTagger.Instance.offlineVRRig.head.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
-            GorillaTagger.Instance.offlineVRRig.leftHand.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
-            GorillaTagger.Instance.offlineVRRig.rightHand.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
-        }
-
-        public static void TagPlayer(VRRig p)
-        {
-            if (!p.mainSkin.material.name.Contains("fected") && VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
-            {
-                GorillaGameModes.GameMode.ReportTag(PhotonNetwork.CurrentRoom.GetPlayer(p.Creator.ActorNumber));
-
-                VRRig.LocalRig.enabled = false;
-                VRRig.LocalRig.transform.position = p.headConstraint.position;
-                VRRig.LocalRig.leftHandTransform.position = p.headConstraint.position;
-                VRRig.LocalRig.rightHandTransform.position = p.headConstraint.position;
-                VRRig.LocalRig.enabled = true;
-            }
-        }
-
-        public static void TagAll()
-        {
-            foreach (VRRig p in VRRigCache.ActiveRigs)
-            {
-                if (!p.isOfflineVRRig)
-                {
-                    TagPlayer(p);
-                }
-            }
-        }
-
-        public static (Vector3 position, Quaternion rotation, Vector3 up, Vector3 forward, Vector3 right) TrueRightHand()
-        {
-            Quaternion rot = GorillaTagger.Instance.rightHandTransform.rotation * GorillaLocomotion.GTPlayer.Instance.RightHand.handRotOffset;
-            return (GorillaTagger.Instance.rightHandTransform.position + GorillaTagger.Instance.rightHandTransform.rotation * GorillaLocomotion.GTPlayer.Instance.RightHand.handOffset, rot, rot * Vector3.up, rot * Vector3.forward, rot * Vector3.right);
-        }
-
-        static GameObject cat = null;
 
         public static void sillycatholdable()
         {
@@ -1048,9 +861,7 @@ namespace ShibaGTGenesisReborn.Menu
             }
 
             cat.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
-
             cat.transform.position = TrueRightHand().position;
-
             cat.transform.rotation = TrueRightHand().rotation;
         }
 
@@ -1063,6 +874,78 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
+        public static void ShibaGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                Vector3 funn = (GunLib.GetPointerPos() - GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position).normalized;
+                funn *= 60f;
+
+                GameObject shiba = Main.LoadAssetBundle("shiba");
+                shiba.transform.localScale /= 3f;
+                shiba.transform.position = GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.position;
+                shiba.transform.rotation = GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.rotation;
+
+                Object.Destroy(shiba.GetComponent<Rigidbody>());
+                Object.Destroy(shiba.GetComponent<BoxCollider>());
+
+                shiba.transform.Find("Handle1").AddComponent<BoxCollider>();
+                shiba.transform.Find("Handle1").AddComponent<Rigidbody>();
+                shiba.transform.Find("Handle1").GetComponent<Rigidbody>().linearVelocity = funn;
+
+                shiba.gameObject.layer = 8;
+                shiba.transform.Find("Handle1").gameObject.layer = 8;
+                shiba.transform.Find("Handle1").name = string.Concat(shiba.name, "MonoObject");
+
+                Object.Destroy(shiba, 15f);
+            }, false);
+        }
+
+        public static (Vector3 position, Quaternion rotation, Vector3 up, Vector3 forward, Vector3 right) TrueRightHand()
+        {
+            Quaternion rot = GorillaTagger.Instance.rightHandTransform.rotation * GorillaLocomotion.GTPlayer.Instance.RightHand.handRotOffset;
+            return (GorillaTagger.Instance.rightHandTransform.position + GorillaTagger.Instance.rightHandTransform.rotation * GorillaLocomotion.GTPlayer.Instance.RightHand.handOffset, rot, rot * Vector3.up, rot * Vector3.forward, rot * Vector3.right);
+        }
+        #endregion
+
+        #region Gun Settings
+        public static bool G = false;
+        public static bool hasTpd = false;
+        public static float num = 8f;
+
+        public static void EquipGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                G = !G;
+                if (!G)
+                {
+                    GunLib.CleanupPointer();
+                }
+            }, false);
+        }
+
+        public static void GunSmoothNess()
+        {
+            if (num == 8f)
+            {
+                num = 66f;
+                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Keyboard";
+            }
+            else if (num == 66f)
+            {
+                num = 144f;
+                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Thick";
+            }
+            else
+            {
+                num = 8f;
+                Main.GetIndex("Click Sound: Normal").overlapText = "Click Sound: Normal";
+            }
+        }
+        #endregion
+
+        #region Projectiles
         public class ProjectileEntry
         {
             public string Name;
@@ -1072,8 +955,18 @@ namespace ShibaGTGenesisReborn.Menu
             public int ThrowableIndex => Throwable != null ? Throwable.throwableMakerIndex : -1;
         }
 
+        public enum ThrowableHand
+        {
+            Left,
+            Right,
+            Both,
+            Dynamic
+        }
+
+        public static bool biig;
         private static ProjectileEntry _snowballEntry;
         private static bool _isInitializing;
+        private static float spamDihlay;
 
         public static void InitializeSnowball()
         {
@@ -1140,14 +1033,6 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public enum ThrowableHand
-        {
-            Left,
-            Right,
-            Both,
-            Dynamic
-        }
-
         public static void UpdateNetworkedProjectile(int index, ThrowableHand hand)
         {
             if (hand == ThrowableHand.Left || hand == ThrowableHand.Both)
@@ -1156,8 +1041,6 @@ namespace ShibaGTGenesisReborn.Menu
                 VRRig.LocalRig.RightThrowableProjectileIndex = index;
             VRRig.LocalRig.myBodyDockPositions.RefreshTransferrableItems();
         }
-
-        public static bool biig;
 
         public static void SendSnowball(Vector3 position, Vector3 velocity, Color? color = null, ThrowableHand hand = ThrowableHand.Dynamic)
         {
@@ -1275,17 +1158,14 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        private static float spamDihlay;
         public static void SnowballSpam(Vector3 velocity, Vector3 woah)
         {
             if (!(Time.time > spamDihlay)) return;
 
-            bool fireLeft = ControllerInputPoller.instance.leftGrab;
             bool fireRight = ControllerInputPoller.instance.rightControllerSecondaryButton || Mouse.current.rightButton.isPressed;
 
             if (fireRight)
             {
-
                 for (int i = 0; i < 2; i++)
                 {
                     SendSnowball(woah, velocity, Color.white, ThrowableHand.Right);
@@ -1298,17 +1178,65 @@ namespace ShibaGTGenesisReborn.Menu
         {
             if (!(Time.time > spamDihlay)) return;
 
-            bool fireLeft = ControllerInputPoller.instance.leftGrab;
             bool fireRight = ControllerInputPoller.instance.rightGrab || Mouse.current.rightButton.isPressed;
 
             if (fireRight)
             {
-
                 for (int i = 0; i < 2; i++)
                 {
                     SendSnowball(woah, velocity, Color.white, ThrowableHand.Right);
                 }
                 spamDihlay = Time.time + 0.5f;
+            }
+        }
+
+        public static void FlingGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null)
+                {
+                    VRRig.LocalRig.enabled = false;
+                    GorillaTagger.Instance.offlineVRRig.enabled = false;
+                    VRRig.LocalRig.transform.position = GunLib.LockedPlayer.transform.position;
+                    SnowballSpam1(-GunLib.LockedPlayer.transform.up * 20f, GunLib.LockedPlayer.transform.position - new Vector3(0f, -0.3f, 0f));
+                }
+            }, true);
+        }
+        #endregion
+
+        #region Room
+        public static string lastmap;
+        private static float actionDelay;
+
+        public static void Disconnect()
+        {
+            PhotonNetwork.Disconnect();
+        }
+
+        public static void BDisconnect()
+        {
+            if (InputHandler.Instance.RightSecondary.IsPressed)
+            {
+                PhotonNetwork.Disconnect();
+                NetworkSystem.Instance.ReturnToSinglePlayer();
+            }
+        }
+
+        public static void Joincodegenesis()
+        {
+            PhotonNetworkController.Instance.AttemptToJoinSpecificRoom("GENESIS", GorillaNetworking.JoinType.Solo);
+        }
+
+        public static void JoinRandom()
+        {
+            if (PhotonNetworkController.Instance.currentJoinTrigger.networkZone != null)
+            {
+                lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
+            }
+            if (!PhotonNetwork.InRoom)
+            {
+                PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap), GorillaNetworking.JoinType.Solo);
             }
         }
 
@@ -1318,11 +1246,165 @@ namespace ShibaGTGenesisReborn.Menu
             NetworkSystem.Instance.currentRegionIndex = Array.IndexOf(NetworkSystem.Instance.regionNames, region);
         }
 
+        public static void RPCProt()
+        {
+            if (!PhotonNetwork.InRoom) return;
+            try
+            {
+                MonkeAgent.instance.rpcErrorMax = int.MaxValue;
+                MonkeAgent.instance.rpcCallLimit = int.MaxValue;
+                MonkeAgent.instance.logErrorMax = int.MaxValue;
+
+                MonkeAgent.instance.userRPCCalls.Clear();
+
+                Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
+                GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
+
+                PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
+                PhotonNetwork.QuickResends = int.MaxValue;
+            }
+            catch { }
+        }
+
+        public static void lbaction(GorillaPlayerLineButton.ButtonType type, NetPlayer player = null, bool? state = null)
+        {
+            if (type == GorillaPlayerLineButton.ButtonType.Mute)
+            {
+                foreach (var line in GorillaScoreboardTotalUpdater.allScoreboardLines)
+                {
+                    if (player == null ? (state == true ? !line.muteButton.isAutoOn : line.muteButton.isAutoOn) : line.linePlayer == player)
+                    {
+                        bool on = state ?? !line.muteButton.isOn;
+                        line.muteButton.isOn = on;
+                        line.PressButton(on, GorillaPlayerLineButton.ButtonType.Mute);
+                        if (player != null) break;
+                    }
+                }
+            }
+            else
+            {
+                if (player != null)
+                    GorillaPlayerScoreboardLine.ReportPlayer(player.UserId, type, player.NickName);
+                else
+                    foreach (var p in NetworkSystem.Instance.PlayerListOthers)
+                        GorillaPlayerScoreboardLine.ReportPlayer(p.UserId, type, p.NickName);
+            }
+        }
+
+        public static void MuteGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null && !GunLib.LockedPlayer.isOfflineVRRig && Time.time > actionDelay)
+                {
+                    lbaction(GorillaPlayerLineButton.ButtonType.Mute, GunLib.LockedPlayer.Creator);
+                    actionDelay = Time.time + 0.5f;
+                }
+            }, true);
+        }
+
+        public static void MuteAll() => lbaction(GorillaPlayerLineButton.ButtonType.Mute, state: true);
+        public static void UnmuteAll() => lbaction(GorillaPlayerLineButton.ButtonType.Mute, state: false);
+
+        public static void ReportGun()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null && !GunLib.LockedPlayer.isOfflineVRRig && Time.time > actionDelay)
+                {
+                    lbaction(GorillaPlayerLineButton.ButtonType.Cheating, GunLib.LockedPlayer.Creator);
+                    actionDelay = Time.time + 0.3f;
+                }
+            }, true);
+        }
+
+        public static void ReportAll() => lbaction(GorillaPlayerLineButton.ButtonType.Cheating);
+        #endregion
+
+        #region Rig
+        private static bool Ghost_Toggled = false;
+        private static bool Invis_Toggled = false;
+
+        public static void GhostMonke()
+        {
+            bool isPressed = InputHandler.Instance.LeftPrimary.WasPressed;
+
+            if (isPressed)
+            {
+                Ghost_Toggled = !Ghost_Toggled;
+                VRRig.LocalRig.enabled = !Ghost_Toggled;
+            }
+        }
+
+        public static void InvisMonke()
+        {
+            if (InputHandler.Instance.RightPrimary.WasPressed)
+                Invis_Toggled = !Invis_Toggled;
+
+            if (Invis_Toggled)
+            {
+                VRRig.LocalRig.enabled = false;
+                VRRig.LocalRig.transform.position = new Vector3(0f, -100f, 0f);
+            }
+            else
+            {
+                VRRig.LocalRig.enabled = true;
+            }
+        }
+
+        public static void LongArms()
+        {
+            if (InputHandler.Instance.RightTrigger.IsPressed)
+            {
+                GTPlayer.Instance.transform.localScale += new Vector3(0.01f, 0.01f, 0.01f);
+            }
+            if (InputHandler.Instance.LeftTrigger.IsPressed)
+            {
+                GTPlayer.Instance.transform.localScale -= new Vector3(0.01f, 0.01f, 0.01f);
+            }
+        }
+
+        public static void NormalArms()
+        {
+            GTPlayer.Instance.transform.localScale = new Vector3(1f, 1f, 1f);
+        }
+
+        public static void NoFinger()
+        {
+            ControllerInputPoller.instance.leftControllerGripFloat = 0f;
+            ControllerInputPoller.instance.rightControllerGripFloat = 0f;
+            ControllerInputPoller.instance.leftControllerIndexFloat = 0f;
+            ControllerInputPoller.instance.rightControllerIndexFloat = 0f;
+            ControllerInputPoller.instance.leftControllerPrimaryButton = false;
+            ControllerInputPoller.instance.leftControllerSecondaryButton = false;
+            ControllerInputPoller.instance.rightControllerPrimaryButton = false;
+            ControllerInputPoller.instance.rightControllerSecondaryButton = false;
+            ControllerInputPoller.instance.leftControllerPrimaryButtonTouch = false;
+            ControllerInputPoller.instance.leftControllerSecondaryButtonTouch = false;
+            ControllerInputPoller.instance.rightControllerPrimaryButtonTouch = false;
+            ControllerInputPoller.instance.rightControllerSecondaryButtonTouch = false;
+        }
+
+        public static void SpazRig()
+        {
+            System.Random random = new System.Random();
+            GorillaTagger.Instance.offlineVRRig.head.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
+            GorillaTagger.Instance.offlineVRRig.leftHand.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
+            GorillaTagger.Instance.offlineVRRig.rightHand.rigTarget.eulerAngles = new Vector3(random.Next(0, 360), random.Next(0, 360), random.Next(0, 360));
+        }
+
         public static void FixHead()
         {
             VRRig.LocalRig.head.trackingRotationOffset.x = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.y = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.z = 0f;
         }
+        #endregion
+
+        #region Misc
+        public static void placeholder()
+        {
+        }
+        #endregion
     }
 }

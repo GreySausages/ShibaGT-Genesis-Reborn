@@ -31,7 +31,7 @@ namespace ShibaGTGenesisReborn.Menu
 
             new ButtonInfo[]
             { // Menu Settings
-                new ButtonInfo { buttonText = "Gunlib", method =() => SettingsMods.guardian(), toolTip = "Gun settings", isTogglable = false},
+                new ButtonInfo { buttonText = "Gun Settings", method =() => SettingsMods.guardian(), toolTip = "Gun settings", isTogglable = false},
                 new ButtonInfo { buttonText = "Menu", method =() => SettingsMods.safety(), toolTip = "Menu settings", isTogglable = false},
                 new ButtonInfo { buttonText = "Movement", method =() => SettingsMods.moveset(), toolTip = "Move settings", isTogglable = false},
                 new ButtonInfo { buttonText = "Projectiles", method =() => SettingsMods.projset(), toolTip = "Proj settings", isTogglable = false},
@@ -143,6 +143,11 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Connect to US Central", method =() => mods.ConnectToRegion("us"), enabled = false, isTogglable = false, toolTip = "Join US Central server"},
                 new ButtonInfo { buttonText = "Connect to US West", method =() => mods.ConnectToRegion("usw"), enabled = false, isTogglable = false, toolTip = "Join US West server"},
                 new ButtonInfo { buttonText = "Connect to EU", method =() => mods.ConnectToRegion("eu"), enabled = false, isTogglable = false, toolTip = "Join EU server"},
+                new ButtonInfo { buttonText = "Mute Gun", method =() => mods.MuteGun(), isTogglable = true, toolTip = "Shoot to mute player"},
+                new ButtonInfo { buttonText = "Mute All", method =() => mods.MuteAll(), enabled = false, isTogglable = false, toolTip = "Mute all players"},
+                new ButtonInfo { buttonText = "Unmute All", method =() => mods.UnmuteAll(), enabled = false, isTogglable = false, toolTip = "Unmute all players"},
+                new ButtonInfo { buttonText = "Report Gun", method =() => mods.ReportGun(), isTogglable = true, toolTip = "Shoot to report player"},
+                new ButtonInfo { buttonText = "Report All", method =() => mods.ReportAll(), enabled = false, isTogglable = false, toolTip = "Report all players"},
             },
             new ButtonInfo[]
             { // Move Set
