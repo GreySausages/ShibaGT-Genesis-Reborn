@@ -105,9 +105,6 @@ _________ ____  ___  _________
         \/      \_/        \/ 
            CXS {MenuName} {CXSVersion}
           Made By Imudtrust
-
-
-     Originaly by goldentrophy & Twigcore
 ");
 
             (GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset).supportsCameraOpaqueTexture = true;

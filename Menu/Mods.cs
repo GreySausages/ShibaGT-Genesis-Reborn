@@ -1311,5 +1311,11 @@ namespace ShibaGTGenesisReborn.Menu
                 spamDihlay = Time.time + 0.5f;
             }
         }
+
+        public static void ConnectToRegion(string region)
+        {
+            if (PhotonNetwork.CloudRegion != region) PhotonNetwork.ConnectToRegion(region);
+            NetworkSystem.Instance.currentRegionIndex = Array.IndexOf(NetworkSystem.Instance.regionNames, region);
+        }
     }
 }

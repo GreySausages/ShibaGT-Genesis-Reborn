@@ -139,6 +139,10 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "B Disconnect", method =() => mods.BDisconnect(), enabled = false, isTogglable = true, toolTip = "Press B to leave"},
                 new ButtonInfo { buttonText = "Join Genesis", method =() => mods.Joincodegenesis(), enabled = false, isTogglable = false, toolTip = "Join Genesis"},
                 new ButtonInfo { buttonText = "Join Random Room", method =() => mods.JoinRandom(), enabled = false, isTogglable = false, toolTip = "Join random"},
+                new ButtonInfo { buttonText = "Connect to Fastest Region", method =() => PhotonNetwork.ConnectToBestCloudServer(), enabled = false, isTogglable = false, toolTip = "Join US Central server"},
+                new ButtonInfo { buttonText = "Connect to US Central", method =() => mods.ConnectToRegion("us"), enabled = false, isTogglable = false, toolTip = "Join US Central server"},
+                new ButtonInfo { buttonText = "Connect to US West", method =() => mods.ConnectToRegion("usw"), enabled = false, isTogglable = false, toolTip = "Join US West server"},
+                new ButtonInfo { buttonText = "Connect to EU", method =() => mods.ConnectToRegion("eu"), enabled = false, isTogglable = false, toolTip = "Join EU server"},
             },
             new ButtonInfo[]
             { // Move Set
