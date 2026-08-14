@@ -37,7 +37,7 @@ namespace Plon.Libs
 
         public static void Gunlib(bool LockOn)
         {
-            if (ControllerInputPoller.instance.rightGrab || Mouse.current.rightButton.isPressed)
+            if (InputHandler.Instance.RightGrip.IsPressed || Mouse.current.rightButton.isPressed)
             {
                 RaycastHit hitInfo;
 
@@ -130,7 +130,7 @@ namespace Plon.Libs
                 hit = hitInfo;
 
                 bool shooting =
-                    ControllerInputPoller.instance.rightControllerIndexFloat > 0.1f ||
+                    InputHandler.Instance.RightTrigger.IsPressed ||
                     Mouse.current.leftButton.isPressed;
 
                 if (shooting)

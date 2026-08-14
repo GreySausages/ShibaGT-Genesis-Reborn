@@ -1,11 +1,12 @@
+using GorillaLocomotion;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Plon.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.XR;
-using GorillaLocomotion;
 
 namespace Plon.Mods
 {
@@ -62,20 +63,14 @@ namespace Plon.Mods
                 float lGrip = ControllerInputPoller.instance.leftControllerGripFloat;
                 float lTrig = ControllerInputPoller.instance.leftControllerIndexFloat;
 
-                // --- ROBUST COLLISION IGNORE LOOP ---
                 if (Time.time > ignoreTimer)
                 {
                     ignoreTimer = Time.time + 1.0f;
                     if (Obj.TryGetComponent(out Collider myCol))
                     {
-                        // Ignore local player movement rig
                         IgnoreCollisionRecursive(myCol, player.transform);
-
-                        // ONLY ignore the OfflineVRRig specifically
                         if (GorillaTagger.Instance.offlineVRRig != null)
                             IgnoreCollisionRecursive(myCol, GorillaTagger.Instance.offlineVRRig.transform);
-
-                        // Fallback safety for standard colliders
                         if (player.bodyCollider) Physics.IgnoreCollision(myCol, player.bodyCollider, true);
                         if (player.headCollider) Physics.IgnoreCollision(myCol, player.headCollider, true);
                     }
@@ -87,13 +82,15 @@ namespace Plon.Mods
 
                     Obj.transform.position = Hand.TransformPoint(OffP);
                     Obj.transform.rotation = Hand.rotation * OffR;
+                    
+                    if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                        Obj.UpdateNetworkPosition();
 
                     if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = true;
 
                     float currentTrig = isRightHand ? rTrig : lTrig;
                     float currentGrip = isRightHand ? rGrip : lGrip;
 
-                    // Updated Squish Logic for 0.6f base scale
                     float sq = 0.6f * (1f - (currentTrig * 0.4f));
                     Obj.transform.localScale = new Vector3(sq, 0.3f, sq);
 
@@ -148,6 +145,9 @@ namespace Plon.Mods
 
         public static void Kill()
         {
+            if (Obj != null && NetworkingLibrary.Instance != null)
+                Obj.UnregisterFromNetwork();
+            
             if (Obj) Destroy(Obj);
             Done = false; Down = false; Held = true;
             OffP = Vector3.zero; OffR = Quaternion.identity;
@@ -157,8 +157,6 @@ namespace Plon.Mods
         {
             if (Obj) return;
             Obj = new GameObject("GroshItem");
-
-            // Layer 8 for standard physical objects
             Obj.layer = 8;
 
             MeshFilter mf = Obj.AddComponent<MeshFilter>();
@@ -183,15 +181,17 @@ namespace Plon.Mods
 
             Aud = Obj.AddComponent<AudioSource>();
             Aud.spatialBlend = 1f;
-            Aud.volume = 0.4f; // Less loud
+            Aud.volume = 0.4f;
 
-            // Set scale to 0.6f (Bigger)
             Obj.transform.localScale = new Vector3(0.1f, 0.1f, 0.1f);
 
             if (GorillaLocomotion.GTPlayer.Instance)
                 IgnoreCollisionRecursive(col, GorillaLocomotion.GTPlayer.Instance.transform);
 
             Done = true;
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                Obj.RegisterForNetwork();
         }
 
         static IEnumerator Do(string u, string t)

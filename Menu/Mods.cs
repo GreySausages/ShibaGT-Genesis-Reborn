@@ -263,7 +263,7 @@ namespace Plon.Menu
         public static void SoundSpammer(int id = 18)
         {
             if (!PhotonNetwork.InRoom) return;
-            if (Time.time > delay && ControllerInputPoller.instance.rightControllerIndexFloat > 0.1f)
+            if (Time.time > delay && InputHandler.Instance.RightTrigger.IsPressed)
             {
                 delay = Time.time + 0.1f;
                 GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlayHandTap", RpcTarget.All, new object[]
@@ -388,7 +388,7 @@ namespace Plon.Menu
             if (!PhotonNetwork.InRoom) return;
             if (Time.time > delay)
             {
-                if (ControllerInputPoller.instance.rightControllerIndexFloat > 0.1f)
+                if (InputHandler.Instance.RightTrigger.IsPressed)
                 {
                     delay = Time.time + 0.3f;
                     GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.rightHandTransform.position, GorillaTagger.Instance.rightHandTransform.rotation, 4f, 100f, false, true });
@@ -396,7 +396,7 @@ namespace Plon.Menu
             }
             if (Time.time > delay)
             {
-                if (ControllerInputPoller.instance.leftControllerIndexFloat > 0.1f)
+                if (InputHandler.Instance.LeftTrigger.IsPressed)
                 {
                     delay = Time.time + 0.3f;
                     GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.leftHandTransform.position, GorillaTagger.Instance.leftHandTransform.rotation, 4f, 100f, false, true });
@@ -413,7 +413,7 @@ namespace Plon.Menu
             MeshCollider[] colliders = Resources.FindObjectsOfTypeAll<MeshCollider>();
             foreach (MeshCollider collider in colliders)
             {
-                collider.enabled = !(ControllerInputPoller.instance.rightControllerIndexFloat > 0.1f);
+                collider.enabled = !(InputHandler.Instance.RightTrigger.IsPressed);
             }
         }
 
@@ -469,7 +469,7 @@ namespace Plon.Menu
         }
         public static void BDisconnect()
         {
-            if (ControllerInputPoller.instance.rightControllerSecondaryButton)
+            if (InputHandler.Instance.RightSecondary.IsPressed)
             {
                 PhotonNetwork.Disconnect();
                 NetworkSystem.Instance.ReturnToSinglePlayer();
@@ -480,7 +480,7 @@ namespace Plon.Menu
         private static Vector3 scale = new Vector3(0.0125f, 0.28f, 0.3825f);
         public static void Platforms(bool Invis = false)
         {
-            if (ControllerInputPoller.instance.rightGrab && PlatR == null)
+            if (InputHandler.Instance.RightTrigger.IsPressed && PlatR == null)
             {
                 PlatR = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 PlatR.transform.localScale = scale;
@@ -490,12 +490,7 @@ namespace Plon.Menu
                 PlatR.GetComponent<Renderer>().material.color = PlatColor;
                 if (Invis) GameObject.Destroy(PlatR.GetComponent<Renderer>());
             }
-            if (!ControllerInputPoller.instance.rightGrab && PlatR != null)
-            {
-                GameObject.Destroy(PlatR);
-                PlatR = null;
-            }
-            if (ControllerInputPoller.instance.leftGrab && PlatL == null)
+            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL == null)
             {
                 PlatL = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 PlatL.transform.localScale = scale;
@@ -505,7 +500,7 @@ namespace Plon.Menu
                 PlatL.GetComponent<Renderer>().material.color = PlatColor;
                 if (Invis) GameObject.Destroy(PlatL.GetComponent<Renderer>());
             }
-            if (!ControllerInputPoller.instance.leftGrab && PlatL != null)
+            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL != null)
             {
                 GameObject.Destroy(PlatL);
                 PlatL = null;
@@ -514,7 +509,7 @@ namespace Plon.Menu
 
         public static void CarMonkeyandfly(float speed, bool fly)
         {
-            if (ControllerInputPoller.instance.rightControllerPrimaryButton)
+            if (InputHandler.Instance.RightSecondary.IsPressed)
             {
                 GorillaLocomotion.GTPlayer.Instance.transform.position += GorillaLocomotion.GTPlayer.Instance.headCollider.transform.forward * Time.deltaTime * speed;
                 if (fly) GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
@@ -576,24 +571,35 @@ namespace Plon.Menu
             }
         }
 
-        public static bool Ghost;
-        public static bool Button;
-        public static void GhostMonkey()
+        private static bool Ghost_Toggled = false;
+    private static bool Invis_Toggled = false;
+
+    public static void GhostMonke()
+    {
+        bool isPressed = InputHandler.Instance.LeftPrimary.WasPressed;
+
+        if (isPressed)
         {
-            VRRig.LocalRig.enabled = !Ghost;
-            if (ControllerInputPoller.instance.rightControllerPrimaryButton && !Button)
-                Ghost = !Ghost;
-            Button = ControllerInputPoller.instance.rightControllerPrimaryButton;
-            if (Ghost) NoFinger();
+            Ghost_Toggled = !Ghost_Toggled;
+            VRRig.LocalRig.enabled = !Ghost_Toggled;
         }
-        public static void InvisMonkey()
+    }
+
+    public static void InvisMonke()
+    {
+        if (InputHandler.Instance.RightPrimary.WasPressed)
+            Invis_Toggled = !Invis_Toggled;
+
+        if (Invis_Toggled)
         {
-            VRRig.LocalRig.enabled = !Button;
-            VRRig.LocalRig.headBodyOffset.x = Ghost ? 180f : 0f;
-            if (ControllerInputPoller.instance.rightControllerPrimaryButton && !Button)
-                Ghost = !Ghost;
-            Button = ControllerInputPoller.instance.rightControllerPrimaryButton;
+            VRRig.LocalRig.enabled = false;
+            VRRig.LocalRig.transform.position = new Vector3(0f, -100f, 0f);
         }
+        else
+        {
+            VRRig.LocalRig.enabled = true;
+        }
+    }
 
         public static void placeholder()
         {

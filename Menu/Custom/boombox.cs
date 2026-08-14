@@ -1,13 +1,15 @@
+using GorillaLocomotion;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Photon.Realtime;
+using Plon.Libs;
+using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
-using GorillaLocomotion;
-using ShibaGTGenesisReborn.Libs;
 
 namespace Plon.Mods
 {
@@ -18,11 +20,9 @@ namespace Plon.Mods
         public static float SpatialBlend3D = 1.0f;
         public static float SpatialBlendShoulder = 0.0f;
         public static float PitchAndSpeed = 1.0f;
-
         public static bool UseVisualizer = true;
         public static float VisualizerIntensity = 0.3f;
         public static float BaseScale = 0.8f;
-
         public static float BodySide = 0.0f;
         public static float BodyHeight = -0.1f;
         public static float BodyDepth = -0.15f;
@@ -50,6 +50,7 @@ namespace Plon.Mods
         static string Dir => Application.persistentDataPath;
         static string P_Obj => Path.Combine(Dir, "boombox.obj");
         static string P_Tex => Path.Combine(Dir, "boombox.png");
+        public static string P_Aud => Path.Combine(Dir, "boombox_audio.wav");
 
         public static void AdjustVolume(float delta) { Volume = Mathf.Clamp(Volume + delta, 0f, 1f); if (Aud) Aud.volume = Volume; }
         public static void AdjustPitchSpeed(float delta) { PitchAndSpeed = Mathf.Clamp(PitchAndSpeed + delta, 0.5f, 2.0f); if (Aud) Aud.pitch = PitchAndSpeed; }
@@ -79,26 +80,23 @@ namespace Plon.Mods
             {
                 if (Obj)
                     Obj.transform.localScale = Vector3.one * BaseScale;
-
                 return;
             }
 
             Aud.GetOutputData(samples, 0);
-
             float sum = 0f;
-
             for (int i = 0; i < samples.Length; i++)
                 sum += samples[i] * samples[i];
-
             float rms = Mathf.Sqrt(sum / samples.Length);
-
             float scale = BaseScale + (rms * VisualizerIntensity);
-
             Obj.transform.localScale = Vector3.one * scale;
         }
 
         public static void Kill()
         {
+            if (Obj != null && NetworkingLibrary.Instance != null)
+                Obj.UnregisterFromNetwork();
+            
             if (Me) Me.StopAllCoroutines();
             if (Obj) Destroy(Obj);
             Obj = null; Aud = null; CM = null; CT = null;
@@ -129,10 +127,18 @@ namespace Plon.Mods
                 if (!Hand) { Held = false; return; }
                 Obj.transform.position = Hand.TransformPoint(OffP);
                 Obj.transform.rotation = Hand.rotation * OffR;
+                
+                if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                    Obj.UpdateNetworkPosition();
 
                 float grip = isRightHand ? rGrip : lGrip;
                 if (isRightHand ? ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f : ControllerInputPoller.instance.leftControllerIndexFloat > 0.5f)
-                    if (Aud.clip != null && !Aud.isPlaying) Aud.Play();
+                    if (Aud.clip != null && !Aud.isPlaying) 
+                    {
+                        Aud.Play();
+                        if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                            Obj.SyncBoomboxAudio();
+                    }
 
                 if (grip < 0.1f)
                 {
@@ -214,11 +220,13 @@ namespace Plon.Mods
             IgnoreCollisionRecursive(col, player.transform);
             if (GorillaTagger.Instance.offlineVRRig != null) IgnoreCollisionRecursive(col, GorillaTagger.Instance.offlineVRRig.transform);
             Done = true;
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                Obj.RegisterForNetwork();
         }
 
         public static void OpenNativePicker()
         {
-            //NotificationLib.SendNotification("Opened file picker, check your PC!", 4, true, NotificationType.Success);
             pickerOpen = true;
             Thread t = new Thread(() => {
                 OpenFileName ofn = new OpenFileName { lStructSize = Marshal.SizeOf(typeof(OpenFileName)), lpstrFilter = "Audio Files\0*.mp3;*.wav;*.ogg\0\0", lpstrFile = new string(new char[256]), lpstrTitle = "Select Music", Flags = 0x00080000 | 0x00001000 | 0x00000800 };
@@ -236,7 +244,19 @@ namespace Plon.Mods
             using (UnityWebRequest u = UnityWebRequestMultimedia.GetAudioClip(url, AudioType.UNKNOWN))
             {
                 yield return u.SendWebRequest();
-                if (u.result == UnityWebRequest.Result.Success) { if (Aud.clip != null) AudioClip.Destroy(Aud.clip); Aud.clip = DownloadHandlerAudioClip.GetContent(u); Aud.Play(); }
+                if (u.result == UnityWebRequest.Result.Success) 
+                { 
+                    if (Aud.clip != null) AudioClip.Destroy(Aud.clip); 
+                    Aud.clip = DownloadHandlerAudioClip.GetContent(u); 
+                    Aud.Play();
+    
+                    if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                    {
+                        NetworkingLibrary.Instance.SendEvent("audioclip", ReceiverGroup.Others, 
+                            NetworkingLibrary.Instance.FindObjectId(Obj), p);
+                        Obj.SyncBoomboxAudio();
+                    }
+                }
             }
         }
 

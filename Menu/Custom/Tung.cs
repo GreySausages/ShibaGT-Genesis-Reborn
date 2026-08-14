@@ -1,11 +1,12 @@
+using GorillaLocomotion;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Plon.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.XR;
-using GorillaLocomotion;
 
 namespace Plon.Mods
 {
@@ -83,6 +84,9 @@ namespace Plon.Mods
 
                     Obj.transform.position = Hand.TransformPoint(OffP);
                     Obj.transform.rotation = Hand.rotation * OffR;
+                    
+                    if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                        Obj.UpdateNetworkPosition();
 
                     if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = true;
 
@@ -143,6 +147,9 @@ namespace Plon.Mods
 
         public static void Kill()
         {
+            if (Obj != null && NetworkingLibrary.Instance != null)
+                Obj.UnregisterFromNetwork();
+            
             if (Obj) Destroy(Obj);
             Done = false; Down = false; Held = true;
             OffP = Vector3.zero; OffR = Quaternion.identity;
@@ -186,6 +193,9 @@ namespace Plon.Mods
                 IgnoreCollisionRecursive(col, GorillaLocomotion.GTPlayer.Instance.transform);
 
             Done = true;
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                Obj.RegisterForNetwork();
         }
 
         static IEnumerator Do(string u, string t, string a)

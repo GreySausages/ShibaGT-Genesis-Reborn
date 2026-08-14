@@ -1,4 +1,4 @@
-﻿using static Plon.Menu.Main;
+using static Plon.Menu.Main;
 
 namespace Plon.Mods
 {

@@ -11,6 +11,7 @@ using System.Collections;
 using UnityEngine.Networking;
 using System.Text.RegularExpressions;
 using BepInEx;
+using GorillaLocomotion;
 
 namespace Plon
 {
@@ -23,43 +24,11 @@ namespace Plon
 
         private Harmony harmony;
 
-        public static bool IsPatched { get; private set; }
-
         private bool versionOkay;
         private bool initialized;
 
-        [AttributeUsage(AttributeTargets.Class)]
-        public class PatchOnAwake : Attribute
-        {
-        }
-        
-        void Start() => CXS.CXS.LoadCXS();
-
-        private void Awake()
-        {
-            Instance = this;
-
-            ComponentHolder = new GameObject(PluginInfo.Name);
-            DontDestroyOnLoad(ComponentHolder);
-
-            harmony = new Harmony(PluginInfo.GUID);
-
-            ApplyHarmonyPatches();
-            AddComponents();
-
-            StartCoroutine(CheckVersion());
-        }
-
-        private void ApplyHarmonyPatches()
-        {
-            if (IsPatched)
-                return;
-
-            harmony.PatchAll(Assembly.GetExecutingAssembly());
-            PatchAwakePatches();
-
-            IsPatched = true;
-        }
+        [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+        public class PatchOnAwake : Attribute { }
 
         private void PatchAwakePatches()
         {
@@ -74,7 +43,7 @@ namespace Plon
                 types = e.Types.Where(t => t != null).ToArray();
             }
 
-            foreach (Type type in types)
+            foreach (var type in types)
             {
                 if (type == null || !type.IsClass)
                     continue;
@@ -86,35 +55,79 @@ namespace Plon
             }
         }
 
-        private void AddComponents()
+        private void Awake()
         {
+            Instance = this;
+
+            ComponentHolder = new GameObject(PluginInfo.Name);
+            DontDestroyOnLoad(ComponentHolder);
+
+            GorillaTagger.OnPlayerSpawned(OnPlayerSpawned);
+        }
+
+        private void Start()
+        {
+            CXS.CXS.LoadCXS();
+
+            harmony = new Harmony(PluginInfo.GUID);
+
+            harmony.PatchAll();
+            PatchAwakePatches();
+
             ComponentHolder.AddComponent<Main>();
             ComponentHolder.AddComponent<CoroutineManager>();
             ComponentHolder.AddComponent<NotificationLib>();
             ComponentHolder.AddComponent<GunLib>();
             ComponentHolder.AddComponent<TimedBehaviour>();
+            ComponentHolder.AddComponent<NetworkingLibrary>();
+
+            StartCoroutine(StartVersionCheck());
+        }
+
+        private void OnPlayerSpawned()
+        {
+            if (initialized)
+                return;
+
+            initialized = true;
+            
+            if (ComponentHolder.GetComponent<InputHandler>() == null)
+                ComponentHolder.AddComponent<InputHandler>();
+
+            StartCoroutine(WaitForVersionThenStartLoop());
         }
 
         private void OnDestroy()
         {
-            RemoveHarmonyPatches();
+            GorillaTagger.OnPlayerSpawned(OnPlayerSpawned);
 
-            if (ComponentHolder != null)
-                Destroy(ComponentHolder);
-
-            Instance = null;
+            harmony?.UnpatchSelf();
         }
 
-        private void RemoveHarmonyPatches()
+        private IEnumerator WaitForVersionThenStartLoop()
         {
-            if (harmony == null || !IsPatched)
-                return;
+            while (!versionOkay)
+                yield return null;
 
-            harmony.UnpatchSelf();
-            IsPatched = false;
+            StartCoroutine(VersionLoop());
         }
 
-        private IEnumerator CheckVersion()
+        private IEnumerator StartVersionCheck()
+        {
+            yield return CheckVersion(true);
+        }
+
+        private IEnumerator VersionLoop()
+        {
+            while (true)
+            {
+                yield return new WaitForSeconds(300f);
+
+                yield return CheckVersion(false);
+            }
+        }
+
+        private IEnumerator CheckVersion(bool startup)
         {
             string rawUrl = "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/PluginInfo.cs";
 
@@ -124,10 +137,14 @@ namespace Plon
 
             if (request.result != UnityWebRequest.Result.Success)
             {
-                NotificationLib.SendNotification(
-                    NotificationLib.NotificationType.Error,
-                    "Failed to check for updates."
-                );
+                if (startup)
+                {
+                    NotificationLib.SendNotification(
+                        NotificationLib.NotificationType.Error,
+                        "Unable to connect to update servers."
+                    );
+                }
+
                 versionOkay = true;
                 yield break;
             }
@@ -138,10 +155,14 @@ namespace Plon
 
             if (!versionMatch.Success)
             {
-                NotificationLib.SendNotification(
-                    NotificationLib.NotificationType.Error,
-                    "Failed to parse version information."
-                );
+                if (startup)
+                {
+                    NotificationLib.SendNotification(
+                        NotificationLib.NotificationType.Error,
+                        "Failed to parse version information."
+                    );
+                }
+
                 versionOkay = true;
                 yield break;
             }
@@ -152,20 +173,40 @@ namespace Plon
 
             if (remote > local)
             {
-                NotificationLib.SendNotification(
-                    NotificationLib.NotificationType.Alert,
-                    $"Update available!\nLatest: {remote}\nCurrent: {local}\nDownload: github.com/GreySausages/ShibaGT-Genesis-Reborn"
-                );
+                if (startup)
+                {
+                    NotificationLib.SendNotification(
+                        NotificationLib.NotificationType.Alert,
+                        $"Update available!\nLatest: {remote}\nCurrent: {local}\nDownload: github.com/GreySausages/ShibaGT-Genesis-Reborn"
+                    );
+                }
+
+                versionOkay = true;
             }
             else if (remote == local)
             {
-                NotificationLib.SendNotification(
-                    NotificationLib.NotificationType.Info,
-                    $"{PluginInfo.Name} is up to date! (v{local})"
-                );
-            }
+                if (startup)
+                {
+                    NotificationLib.SendNotification(
+                        NotificationLib.NotificationType.Info,
+                        $"{PluginInfo.Name} is up to date! (v{local})"
+                    );
+                }
 
-            versionOkay = true;
+                versionOkay = true;
+            }
+            else
+            {
+                if (startup)
+                {
+                    NotificationLib.SendNotification(
+                        NotificationLib.NotificationType.Error,
+                        $"Modified or invalid {PluginInfo.Name} detected. Please download the official version."
+                    );
+                }
+
+                versionOkay = false;
+            }
         }
     }
 }

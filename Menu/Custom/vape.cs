@@ -3,6 +3,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Plon.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -30,7 +31,7 @@ namespace Plon.Mods
         private static float inhaleAmount = 0f;
         private static float maxInhale = 5f;
         private static bool wasInhaling = false;
-        private static bool isExhaling = false;
+        public static bool isExhaling = false;
         private static float exhaleTimer = 0f;
         private static float exhaleDuration = 2.0f;
         public static bool showTweakBar = false;
@@ -51,7 +52,6 @@ namespace Plon.Mods
                 GameObject g = new GameObject("Vaper");
                 Me = g.AddComponent<Vape>();
                 DontDestroyOnLoad(g);
-                //Notifications.SendNotification("Vape Initialized, hold to your mouth and hold trigger to inhale, then move it away from ur mouth to breathe out smoke", 8f, true, NotificationType.Success);
             }
             if (Done && Obj != null)
             {
@@ -98,6 +98,10 @@ namespace Plon.Mods
         public static void Kill()
         {
             if (!Done || Obj == null) return;
+            
+            if (Obj != null && NetworkingLibrary.Instance != null)
+                Obj.UnregisterFromNetwork();
+            
             if (p != null && p.isPlaying) p.Stop();
             if (exhalePS != null && exhalePS.isPlaying) exhalePS.Stop();
             isExhaling = false;
@@ -137,6 +141,9 @@ namespace Plon.Mods
                     isExhaling = false;
                     inhaleAmount = 0f;
                     exhalePS.Stop();
+                    
+                    if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                        Obj.SyncVapeSmoke(false);
                 }
             }
 
@@ -158,6 +165,10 @@ namespace Plon.Mods
             {
                 Obj.transform.position = Hand.TransformPoint(OffP);
                 Obj.transform.rotation = Hand.rotation * OffR;
+                
+                if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                    Obj.UpdateNetworkPosition();
+                
                 if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = true;
                 float trigger = isRightHand ? rTrig : lTrig;
                 float grip = isRightHand ? rGrip : lGrip;
@@ -299,7 +310,7 @@ namespace Plon.Mods
             }
         }
 
-        static void TriggerExhale()
+        public static void TriggerExhale()
         {
             if (exhalePS == null || mouth == null) return;
             isExhaling = true;
@@ -317,6 +328,9 @@ namespace Plon.Mods
             emission.rateOverTime = Mathf.Lerp(10f, 150f, fillRatio);
 
             exhalePS.Play();
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                Obj.SyncVapeSmoke(true);
         }
 
         static IEnumerator Load(string u, string t)
@@ -464,6 +478,9 @@ namespace Plon.Mods
                 dropRb.angularVelocity = Vector3.zero;
             }
             Held = false;
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                Obj.RegisterForNetwork();
         }
 
         static Mesh Pars(string s)

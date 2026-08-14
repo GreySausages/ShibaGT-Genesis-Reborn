@@ -1,16 +1,17 @@
+using GorillaLocomotion;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using BepInEx;
+using Plon.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.XR;
-using GorillaLocomotion;
 
 namespace Plon.Mods
 {
-    internal class FatSealSpammer : MonoBehaviour // a
+    internal class FatSealSpammer : MonoBehaviour
     {
         public static FatSealSpammer Me;
         public static Mesh CM;
@@ -47,8 +48,8 @@ namespace Plon.Mods
 
             if (XRSettings.isDeviceActive)
             {
-                bool vrPressed = ControllerInputPoller.instance != null
-                    && ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f;
+                bool vrPressed = InputHandler.Instance != null
+                    && InputHandler.Instance.RightTrigger.IsPressed;
                 if (vrPressed && Time.time - lastSpawn >= SpawnInterval)
                 {
                     lastSpawn = Time.time;
@@ -149,12 +150,19 @@ namespace Plon.Mods
             if (player.headCollider) Physics.IgnoreCollision(col, player.headCollider, true);
 
             Seals.Add(seal);
+            
+            if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                seal.RegisterForNetwork();
         }
 
         public static void Kill()
         {
             for (int i = 0; i < Seals.Count; i++)
+            {
+                if (Seals[i] != null && NetworkingLibrary.Instance != null)
+                    Seals[i].UnregisterFromNetwork();
                 if (Seals[i]) Destroy(Seals[i]);
+            }
             Seals.Clear();
         }
 
@@ -173,6 +181,9 @@ namespace Plon.Mods
                         UnityEngine.Random.Range(5f, 8f),
                         UnityEngine.Random.Range(-2f, 2f));
                     rb.AddForce(kick, ForceMode.VelocityChange);
+                    
+                    if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
+                        s.UpdateNetworkPosition();
                 }
             }
         }
