@@ -515,16 +515,21 @@ namespace ShibaGTGenesisReborn.Menu
         public static void RPCProt()
         {
             if (!PhotonNetwork.InRoom) return;
-            MonkeAgent.instance.rpcErrorMax = int.MaxValue;
-            MonkeAgent.instance.rpcCallLimit = int.MaxValue;
-            MonkeAgent.instance.logErrorMax = int.MaxValue;
-            var a = typeof(MonkeAgent).GetField("userRPCCalls", BindingFlags.Instance | BindingFlags.NonPublic)?.GetValue(MonkeAgent.instance);
-            a?.GetType().GetMethod("Clear")?.Invoke(a, null);
+            try
+            {
+                MonkeAgent.instance.rpcErrorMax = int.MaxValue;
+                MonkeAgent.instance.rpcCallLimit = int.MaxValue;
+                MonkeAgent.instance.logErrorMax = int.MaxValue;
 
-            PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
-            PhotonNetwork.QuickResends = int.MaxValue;
+                MonkeAgent.instance.userRPCCalls.Clear();
 
-            PhotonNetwork.SendAllOutgoingCommands();
+                Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
+                GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
+
+                PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
+                PhotonNetwork.QuickResends = int.MaxValue;
+            }
+            catch { }
         }
 
         public static bool enablebracelet;
