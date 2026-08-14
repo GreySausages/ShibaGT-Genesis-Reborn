@@ -1317,5 +1317,12 @@ namespace ShibaGTGenesisReborn.Menu
             if (PhotonNetwork.CloudRegion != region) PhotonNetwork.ConnectToRegion(region);
             NetworkSystem.Instance.currentRegionIndex = Array.IndexOf(NetworkSystem.Instance.regionNames, region);
         }
+
+        public static void FixHead()
+        {
+            VRRig.LocalRig.head.trackingRotationOffset.x = 0f;
+            VRRig.LocalRig.head.trackingRotationOffset.y = 0f;
+            VRRig.LocalRig.head.trackingRotationOffset.z = 0f;
+        }
     }
 }
