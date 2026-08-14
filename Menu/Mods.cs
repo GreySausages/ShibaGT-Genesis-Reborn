@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using ExitGames.Client.Photon;
 using GorillaGameModes;
 using GorillaLocomotion;
@@ -9,7 +9,6 @@ using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
 using POpusCodec.Enums;
-using ShibaGTGenesisReborn.Libs;
 using Sirenix.OdinInspector;
 using System;
 using System.Collections.Generic;
@@ -118,10 +117,10 @@ namespace ShibaGTGenesisReborn.Menu
 
         private static string[] pullmodes =
         {
-    "Speed Boost",
-    "Legit",
-    "Reset"
-};
+            "Speed Boost",
+            "Legit",
+            "Reset"
+        };
 
         private static int pullmodeIndex = 0;
 
@@ -619,10 +618,12 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public static void RGB()
+        public static void RGB(bool strobe = false)
         {
-            Color c = Color.HSVToRGB(Mathf.Repeat(Time.time * 0.2f, 1f), 1f, 1f);
             if (!PhotonNetwork.InRoom) return;
+
+            Color c = strobe ? new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value) : Color.HSVToRGB(Mathf.Repeat(Time.time * 0.2f, 1f), 1f, 1f);
+
             GorillaTagger.Instance.myVRRig.SendRPC("RPC_InitializeNoobMaterial", RpcTarget.All, c.r, c.g, c.b);
         }
 

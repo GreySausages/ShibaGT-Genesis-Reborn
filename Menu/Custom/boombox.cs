@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Photon.Realtime;
 using ShibaGTGenesisReborn.Libs;
-using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 

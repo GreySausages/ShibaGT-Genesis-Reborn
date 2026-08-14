@@ -1,11 +1,10 @@
-﻿using HarmonyLib;
+using HarmonyLib;
 using System;
 using System.Linq;
 using System.Reflection;
 using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
-using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using System.Collections;
 using UnityEngine.Networking;

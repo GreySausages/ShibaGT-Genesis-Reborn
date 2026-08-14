@@ -4,7 +4,6 @@ using Photon.Pun;
 using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
-using ShibaGTGenesisReborn.Libs;
 using System;
 using System.IO;
 using System.Linq;

@@ -1,17 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
 		<TargetFramework>netstandard2.1</TargetFramework>
 	</PropertyGroup>
 
 	<ItemGroup>
-	  <Content Include="icons8-shrek-48.ico" />
-	</ItemGroup>
-
-	<ItemGroup>
 	  <EmbeddedResource Include="AssetBundles\gen" />
 	  <EmbeddedResource Include="AssetBundles\genesisingame" />
-
 	</ItemGroup>
 
 	<!-- AssemblyPublicizer usage inspired from GorillaShirts -->
@@ -26,7 +21,6 @@
 
 	<PropertyGroup>
 		<PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
-		<ApplicationIcon>icons8-shrek-48.ico</ApplicationIcon>
 		<OutputType>Library</OutputType>
 	</PropertyGroup>
 

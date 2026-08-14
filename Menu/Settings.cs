@@ -1,4 +1,3 @@
-﻿using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Classes;
 using UnityEngine;
 using static ShibaGTGenesisReborn.Menu.Main;
