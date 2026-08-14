@@ -4,7 +4,7 @@ using System.Text;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
-namespace Plon.Libs
+namespace ShibaGTGenesisReborn.Libs
 {
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {

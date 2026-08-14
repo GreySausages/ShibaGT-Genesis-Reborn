@@ -6,7 +6,7 @@ using UnityEngine.Animations.Rigging;
 using UnityEngine.InputSystem;
 using UnityEngine.XR;
 
-namespace Plon.Libs
+namespace ShibaGTGenesisReborn.Libs
 {
     public class GunLib
     {

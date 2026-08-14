@@ -2,9 +2,9 @@
 using System;
 using System.Linq;
 using System.Reflection;
-using Plon.Classes;
-using Plon.Libs;
-using Plon.Menu;
+using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
+using ShibaGTGenesisReborn.Menu;
 using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using System.Collections;
@@ -13,7 +13,7 @@ using System.Text.RegularExpressions;
 using BepInEx;
 using GorillaLocomotion;
 
-namespace Plon
+namespace ShibaGTGenesisReborn
 {
     [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
     public class Plugin : BaseUnityPlugin

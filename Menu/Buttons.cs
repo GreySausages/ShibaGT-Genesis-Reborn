@@ -1,16 +1,16 @@
 ﻿using GorillaLocomotion;
 using Oculus.Interaction;
 using Photon.Pun;
-using Plon.Classes;
-using Plon.Libs;
-using Plon.Menu;
-using Plon.Menu;
-using Plon.Mods;
-using Plon.Mods;
+using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
+using ShibaGTGenesisReborn.Menu;
+using ShibaGTGenesisReborn.Menu;
+using ShibaGTGenesisReborn.Mods;
+using ShibaGTGenesisReborn.Mods;
 using UnityEngine;
-using static Plon.Settings;
+using static ShibaGTGenesisReborn.Settings;
 
-namespace Plon.Menu
+namespace ShibaGTGenesisReborn.Menu
 {
     internal class Buttons
     {

@@ -5,6 +5,10 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <Content Include="icons8-shrek-48.ico" />
+	</ItemGroup>
+
+	<ItemGroup>
 	  <EmbeddedResource Include="AssetBundles\gen" />
 	  <EmbeddedResource Include="AssetBundles\genesisingame" />
 
@@ -22,6 +26,8 @@
 
 	<PropertyGroup>
 		<PublicizerClearCacheOnClean>true</PublicizerClearCacheOnClean>
+		<ApplicationIcon>icons8-shrek-48.ico</ApplicationIcon>
+		<OutputType>Library</OutputType>
 	</PropertyGroup>
 
 	<ItemGroup>

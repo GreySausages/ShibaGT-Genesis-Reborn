@@ -1,9 +1,9 @@
-﻿using Plon.Classes;
-using Plon.Classes;
+﻿using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Classes;
 using UnityEngine;
-using static Plon.Menu.Main;
+using static ShibaGTGenesisReborn.Menu.Main;
 
-namespace Plon
+namespace ShibaGTGenesisReborn
 {
     public class Settings
     {

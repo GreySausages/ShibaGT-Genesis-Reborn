@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class ExtGradient
     {

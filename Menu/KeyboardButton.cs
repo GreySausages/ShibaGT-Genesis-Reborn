@@ -1,7 +1,7 @@
 using UnityEngine;
-using Plon.Menu;
+using ShibaGTGenesisReborn.Menu;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class KeyboardButton : MonoBehaviour
     {

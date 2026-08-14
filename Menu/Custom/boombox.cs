@@ -6,12 +6,12 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Photon.Realtime;
-using Plon.Libs;
+using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Plon.Mods
+namespace ShibaGTGenesisReborn.Mods
 {
     internal class BoomboxManager : MonoBehaviour
     {

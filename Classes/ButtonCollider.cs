@@ -1,10 +1,10 @@
 using Photon.Pun;
-using Plon.Menu;
+using ShibaGTGenesisReborn.Menu;
 using UnityEngine;
-using static Plon.Menu.Main;
-using static Plon.Settings;
+using static ShibaGTGenesisReborn.Menu.Main;
+using static ShibaGTGenesisReborn.Settings;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     internal class Button : MonoBehaviour
     {

@@ -3,11 +3,11 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Plon.Libs;
+using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 
-namespace Plon.Mods
+namespace ShibaGTGenesisReborn.Mods
 {
     internal class Vape : MonoBehaviour
     {

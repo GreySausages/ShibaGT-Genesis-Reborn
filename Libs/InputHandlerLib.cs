@@ -3,7 +3,7 @@ using System.Linq;
 using UnityEngine;
 using Valve.VR;
 
-namespace Plon.Libs
+namespace ShibaGTGenesisReborn.Libs
 {
     public enum InputType
 {

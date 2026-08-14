@@ -3,12 +3,12 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using Plon.Libs;
+using ShibaGTGenesisReborn.Libs;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.XR;
 
-namespace Plon.Mods
+namespace ShibaGTGenesisReborn.Mods
 {
     internal class GroshHolder : MonoBehaviour
     {

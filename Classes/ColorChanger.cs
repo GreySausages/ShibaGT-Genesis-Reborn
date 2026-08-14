@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class ColorChanger : TimedBehaviour
     {

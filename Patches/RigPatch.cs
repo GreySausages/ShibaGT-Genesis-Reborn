@@ -1,7 +1,7 @@
 ﻿using HarmonyLib;
 using UnityEngine;
 
-namespace Plon.Patches
+namespace ShibaGTGenesisReborn.Patches
 {
     [HarmonyPatch(typeof(VRRig), "OnDisable")]
     internal class GhostPatch : MonoBehaviour

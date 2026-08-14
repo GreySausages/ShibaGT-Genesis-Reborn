@@ -2,7 +2,7 @@
 using HarmonyLib;
 using UnityEngine;
 
-namespace Plon.Patches
+namespace ShibaGTGenesisReborn.Patches
 {
     [HarmonyPatch(typeof(GameObject))]
     [HarmonyPatch("CreatePrimitive", 0)]

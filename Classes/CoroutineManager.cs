@@ -1,7 +1,7 @@
 using System.Collections;
 using UnityEngine;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class CoroutineManager : MonoBehaviour
     {

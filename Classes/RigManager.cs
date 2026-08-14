@@ -4,7 +4,7 @@ using BepInEx;
 using HarmonyLib;
 using UnityEngine;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     internal class RigManager : BaseUnityPlugin
     {

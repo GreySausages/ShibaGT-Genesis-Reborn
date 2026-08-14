@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class ButtonInfo
     {

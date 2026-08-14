@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 
-namespace Plon.Classes
+namespace ShibaGTGenesisReborn.Classes
 {
     public class TimedBehaviour : MonoBehaviour
     {

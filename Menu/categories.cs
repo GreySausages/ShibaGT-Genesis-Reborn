@@ -1,10 +1,10 @@
-﻿using Plon.Classes;
+﻿using ShibaGTGenesisReborn.Classes;
 using System.Collections.Generic;
 using ShibaGTGenesisReborn.Libs;
-using static Plon.Menu.Main;
-using static Plon.Settings;
+using static ShibaGTGenesisReborn.Menu.Main;
+using static ShibaGTGenesisReborn.Settings;
 
-namespace Plon.Menu
+namespace ShibaGTGenesisReborn.Menu
 {
     internal class SettingsMods
     {

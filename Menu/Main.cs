@@ -1,9 +1,9 @@
 ﻿using BepInEx;
 using HarmonyLib;
 using Photon.Pun;
-using Plon.Classes;
-using Plon.Libs;
-using Plon.Menu;
+using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
+using ShibaGTGenesisReborn.Menu;
 using ShibaGTGenesisReborn.Libs;
 using System;
 using System.IO;
@@ -13,12 +13,12 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
-using static Plon.Libs.GunLib;
-using static Plon.Menu.Buttons;
-using static Plon.Menu.mods;
-using static Plon.Settings;
+using static ShibaGTGenesisReborn.Libs.GunLib;
+using static ShibaGTGenesisReborn.Menu.Buttons;
+using static ShibaGTGenesisReborn.Menu.mods;
+using static ShibaGTGenesisReborn.Settings;
 
-namespace Plon.Menu
+namespace ShibaGTGenesisReborn.Menu
 {
     public class Main : MonoBehaviour
     {

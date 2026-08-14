@@ -3,7 +3,7 @@ using Photon.Pun;
 using System;
 using UnityEngine;
 
-namespace Plon.Patches
+namespace ShibaGTGenesisReborn.Patches
 {
     [HarmonyPatch(typeof(MonkeAgent), "SendReport")]
     internal class AntiCheat : MonoBehaviour
