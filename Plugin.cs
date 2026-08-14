@@ -77,7 +77,6 @@ namespace Plon
             ComponentHolder.AddComponent<Main>();
             ComponentHolder.AddComponent<CoroutineManager>();
             ComponentHolder.AddComponent<NotificationLib>();
-            ComponentHolder.AddComponent<GunLib>();
             ComponentHolder.AddComponent<TimedBehaviour>();
             ComponentHolder.AddComponent<NetworkingLibrary>();
 

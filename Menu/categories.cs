@@ -14,6 +14,12 @@ namespace Plon.Menu
             pageNumber = 0;
         }
 
+        public static void ReturnHome()
+        {
+            buttonsType = 0;
+            pageNumber = 0;
+        }
+
         public static void MenuSettings()
         {
             buttonsType = 1;

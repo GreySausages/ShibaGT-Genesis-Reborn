@@ -1,13 +1,14 @@
-﻿using Plon.Menu;
+﻿using GorillaLocomotion;
+using Oculus.Interaction;
+using Photon.Pun;
 using Plon.Classes;
 using Plon.Libs;
 using Plon.Menu;
+using Plon.Menu;
 using Plon.Mods;
-using static Plon.Settings;
-using Photon.Pun;
 using Plon.Mods;
 using UnityEngine;
-using GorillaLocomotion;
+using static Plon.Settings;
 
 namespace Plon.Menu
 {
@@ -34,8 +35,8 @@ namespace Plon.Menu
             { // Menu Settings
                 new ButtonInfo { buttonText = "Gunlib", method =() => SettingsMods.guardian(), toolTip = "Gun settings", isTogglable = false},
                 new ButtonInfo { buttonText = "Menu", method =() => SettingsMods.safety(), toolTip = "Menu settings", isTogglable = false},
-                new ButtonInfo { buttonText = "  Movement  ", method =() => SettingsMods.moveset(), toolTip = "Move settings", isTogglable = false},
-                new ButtonInfo { buttonText = " Projectiles ", method =() => SettingsMods.projset(), toolTip = "Proj settings", isTogglable = false},
+                new ButtonInfo { buttonText = "Movement", method =() => SettingsMods.moveset(), toolTip = "Move settings", isTogglable = false},
+                new ButtonInfo { buttonText = "Projectiles", method =() => SettingsMods.projset(), toolTip = "Proj settings", isTogglable = false},
                 new ButtonInfo { buttonText = "Anti Report", method =() => mods.AntiReport(), toolTip = "Block reports", isTogglable = true, enabled = true},
             },
 
@@ -45,20 +46,24 @@ namespace Plon.Menu
                 new ButtonInfo { buttonText = "Tag All", method =() => mods.TagAll(), isTogglable = true, toolTip = "Tag everyone"},
                 new ButtonInfo { buttonText = "No Tag On Join", method =() => mods.NoTagOnJoin(), isTogglable = true, toolTip = "No tag when joining"},
                 new ButtonInfo { buttonText = "No Leaves", method =() => mods.removeleaves(), disableMethod =() => mods.addleaves(), isTogglable = true, toolTip = "Remove leaves"},
-                new ButtonInfo { buttonText = "60 Hz", method =() => Application.targetFrameRate = 60, disableMethod =() => mods.addleaves(), isTogglable = true, toolTip = "Set 60 FPS"},
+                new ButtonInfo { buttonText = "60 Hz", method =() => mods.FPS(60), isTogglable = true, toolTip = "Set 60 FPS"},
             },
 
             new ButtonInfo[]
             { // Movement
-                new ButtonInfo { buttonText = "Platforms", method =() => mods.Platforms(), isTogglable = true, toolTip = "Spawn platforms"},
-                new ButtonInfo { buttonText = "Invis Platforms", method =() => mods.Platforms(true), isTogglable = true, toolTip = "Invisible platforms"},
-                new ButtonInfo { buttonText = "Noclip (RT)", method =() => mods.Noclip(), isTogglable = true, toolTip = "Walk through walls"},
-                new ButtonInfo { buttonText = "Fly (A)", method =() => mods.CarMonkeyandfly(15f, true), isTogglable = true, toolTip = "Press A to fly"},
-                new ButtonInfo { buttonText = "Car Monkey (A)", method =() => mods.CarMonkeyandfly(15f, false), isTogglable = true, toolTip = "Press A to drive"},
-                new ButtonInfo { buttonText = "TP Gun", method =() => mods.TPGun(), isTogglable = true, toolTip = "Teleport players"},
-                new ButtonInfo { buttonText = "Low Gravity", method =() => mods.LowGravity(), isTogglable = true, toolTip = "Less gravity"},
-                new ButtonInfo { buttonText = "High Gravity", method =() => mods.HighGravity(), isTogglable = true, toolTip = "More gravity"},
-                new ButtonInfo { buttonText = "Up And Down", method =() => mods.UpAndDown(), isTogglable = true, toolTip = "Bounce up/down"},
+                new ButtonInfo { buttonText = "Platforms", method =() => mods.Platforms(), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Invis Platforms", method =() => mods.Platforms(true), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Noclip (RT)", method =() => mods.Noclip(), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Fly (A)", method =() => mods.CarMonkeyandfly(15f, true), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Wasd Fly", method =() => mods.WASDFly(), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Car Monkey (A)", method =() => mods.CarMonkeyandfly(15f, false), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "TP Gun", method =() => mods.TeleportGun(), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "Low Gravity", method =() => mods.GravityManager(mods.Gravitytypes.Low), isTogglable = true, toolTip = "Lowers gravity."},
+                new ButtonInfo { buttonText = "High Gravity", method =() => mods.GravityManager(mods.Gravitytypes.High), isTogglable = true, toolTip = "Increases gravity."},
+                new ButtonInfo { buttonText = "Zero Gravity", method =() => mods.GravityManager(mods.Gravitytypes.Zero), isTogglable = true, toolTip = "Removes gravity."},
+                new ButtonInfo { buttonText = "Reverse Gravity", method =() => mods.GravityManager(mods.Gravitytypes.Reverse), disableMethod = () => mods.Reset_upsidedown(), isTogglable = true, toolTip = "Reverses gravity."},
+                new ButtonInfo { buttonText = "Up And Down", method =() => mods.UpAndDown(), isTogglable = true, toolTip = "placeholder."},
+                new ButtonInfo { buttonText = "CheckPoint", method =() => mods.CheckPoint(), disableMethod =() => mods.CheckPointDisable(), isTogglable = true, toolTip = "placeholder."},
             },
 
             new ButtonInfo[]
@@ -94,7 +99,7 @@ namespace Plon.Menu
             { // fun
                 new ButtonInfo { buttonText = "Board Spam",  method =() => mods.HoverboardSpam(), isTogglable = true, toolTip = "Spawn boards"},
                 new ButtonInfo { buttonText = "Waterbend",  method =() => mods.WaterSplash(), isTogglable = true, toolTip = "Splash water"},
-                
+
                 new ButtonInfo { buttonText = "Bracelet Spam",  method =() => mods.BraceletSpam(), disableMethod =() => mods.NoBracelet(), isTogglable = true, toolTip = "Spawn bracelets"},
                 new ButtonInfo { buttonText = "Networking Library", enableMethod =() => NetworkingLibrary.Instance.NetworkEnabled = true, disableMethod =() => NetworkingLibrary.Instance.NetworkEnabled = false, toolTip = "Menu on left", enabled = !NetworkingLibrary.Instance.NetworkEnabled },
                 new ButtonInfo { buttonText = "Boombox", method = () => BoomboxManager.BoomboxLoop("https://github.com/odinong/Groshable/releases/download/boomboxdiddy/212302951.obj", "https://github.com/odinong/Groshable/releases/download/boomboxdiddy/boomboxmesh.png"), disableMethod = () => BoomboxManager.Kill(), isTogglable = true, toolTip = "Spawn boombox"},
@@ -116,15 +121,14 @@ namespace Plon.Menu
 
             new ButtonInfo[]
             { // Gun Settings
-                new ButtonInfo { buttonText = "Gunlock", enableMethod =() => GunLib.Lock = true, disableMethod =() => GunLib.Lock = false, enabled = GunLib.Lock, isTogglable = true, toolTip = "Lock gun"},
-                new ButtonInfo { buttonText = "Equip Gun", method =() => mods.EquipGun(), isTogglable = true, toolTip = "Get gun"},
+                //new ButtonInfo { buttonText = "Equip Gun", method =() => mods.EquipGun(), isTogglable = true, toolTip = "Get gun"},
             },
 
             new ButtonInfo[]
             { // Master
-                new ButtonInfo { buttonText = "Projectile Spam (B)", method =() => Projectiles.SnowballSpam(GorillaLocomotion.GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f), GTPlayer.Instance.RightHand.controllerTransform.position), enabled = false, isTogglable = true, toolTip = "Hold B to spam"},
-                new ButtonInfo { buttonText = "Projectile Gun (B)", method =() => Projectiles.SnowballSpam(GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.forward * 20f, GTPlayer.Instance.RightHand.controllerTransform.position), enabled = false, isTogglable = true, toolTip = "Press B to shoot"},
-                new ButtonInfo { buttonText = "Snowball Fling Gun", method =() => Projectiles.FlingGun(), enabled = false, isTogglable = true, toolTip = "Fling snowballs"},
+                new ButtonInfo { buttonText = "Projectile Spam (B)", method =() => mods.SnowballSpam(GorillaLocomotion.GTPlayer.Instance.RightHand.velocityTracker.GetAverageVelocity(true, 0f), GTPlayer.Instance.RightHand.controllerTransform.position), enabled = false, isTogglable = true, toolTip = "Hold B to spam"},
+                new ButtonInfo { buttonText = "Projectile Gun (B)", method =() => mods.SnowballSpam(GorillaLocomotion.GTPlayer.Instance.RightHand.controllerTransform.forward * 20f, GTPlayer.Instance.RightHand.controllerTransform.position), enabled = false, isTogglable = true, toolTip = "Press B to shoot"},
+                new ButtonInfo { buttonText = "Snowball Fling Gun", method =() => mods.FlingGun(), enabled = false, isTogglable = true, toolTip = "Fling snowballs"},
             },
             new ButtonInfo[]
             { // Room
@@ -147,7 +151,7 @@ namespace Plon.Menu
             },
             new ButtonInfo[]
             { // Proj Set
-                new ButtonInfo{ buttonText = "Big Snowballs", enableMethod =() => Mods.Projectiles.biig = true, disableMethod =() => Mods.Projectiles.biig = false, isTogglable = true, toolTip = "Giant snowballs"},
+                new ButtonInfo{ buttonText = "Big Snowballs", enableMethod =() => mods.biig = true, disableMethod =() => mods.biig = false, isTogglable = true, toolTip = "Giant snowballs"},
             },
 
             new ButtonInfo[]
@@ -168,7 +172,7 @@ namespace Plon.Menu
 
              new ButtonInfo[]
              {
-                new ButtonInfo { buttonText = "home", method =() => Global.ReturnHome(), isTogglable = false, toolTip = "Go back"},
+                new ButtonInfo { buttonText = "home", method =() => SettingsMods.ReturnHome(), isTogglable = false, toolTip = "Go back"},
              },
 
         };

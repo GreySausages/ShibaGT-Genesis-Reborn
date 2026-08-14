@@ -1,13 +1,14 @@
-﻿using System;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using BepInEx;
+﻿using BepInEx;
 using HarmonyLib;
 using Photon.Pun;
 using Plon.Classes;
+using Plon.Libs;
 using Plon.Menu;
 using ShibaGTGenesisReborn.Libs;
+using System;
+using System.IO;
+using System.Linq;
+using System.Reflection;
 using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -38,7 +39,7 @@ namespace Plon.Menu
                 bool toOpen = (!rightHanded && ControllerInputPoller.instance.leftControllerSecondaryButton) || (rightHanded && ControllerInputPoller.instance.rightControllerPrimaryButton);
                 bool keyboardOpen = UnityInput.Current.GetKey(keyboardButton);
                 trigger_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f;
-                grip_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightGrab;
+                InputHandler.Instance.RightGrip.IsPressed = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightGrab;
                 
                 GameObject a = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText");
                 GameObject b = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData");
