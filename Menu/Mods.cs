@@ -564,21 +564,6 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public static void spamtagOthers()
-        {
-            if (!PhotonNetwork.LocalPlayer.IsMasterClient)
-            {
-                return;
-            }
-            if (Time.time > mods.tagTimer + 0.1f)
-            {
-                foreach (VRRig vrrig in VRRigCache.ActiveRigs)
-                {
-                    vrrig.PlayTaggedEffect();
-                }
-                tagTimer = Time.time;
-            }
-        }
 
         public static void FullBodyESP()
         {
@@ -1044,55 +1029,6 @@ namespace ShibaGTGenesisReborn.Menu
                     TagPlayer(p);
                 }
             }
-        }
-
-        private static float delayTimer;
-        public static void SpamOthers(TagEffectsLibrary.EffectType? type = null)
-        {
-            if (!PhotonNetwork.LocalPlayer.IsMasterClient)
-            {
-                NotificationLib.SendNotification(NotificationLib.NotificationType.Info, "You need to be master");
-                return;
-            }
-
-            delayTimer += Time.deltaTime;
-
-            if (delayTimer < (type == null ? 0.5f : 0.1f)) return;
-            delayTimer = 0f;
-
-            Quaternion rotation = GorillaTagger.Instance.rightHandTransform.rotation;
-            VRRig localRig = GorillaTagger.Instance.offlineVRRig;
-
-            foreach (VRRig rig in VRRigCache.ActiveRigs)
-            {
-                if (rig == localRig) continue;
-
-                if (type == null)
-                {
-                    rig.PlayTaggedEffect();
-                    continue;
-                }
-
-                TagEffectPack pack = new TagEffectPack();
-                TagEffectsLibrary.PlayEffect(rig.transform, false, 0.35f, type.Value, pack, pack, rotation);
-            }
-        }
-
-        public static void SpamSelf(TagEffectsLibrary.EffectType type)
-        {
-            if (!PhotonNetwork.LocalPlayer.IsMasterClient)
-            {
-                NotificationLib.SendNotification(NotificationLib.NotificationType.Info, "You need to be master");
-                return;
-            }
-
-            delayTimer += Time.deltaTime;
-
-            if (delayTimer < 0.5f) return;
-            delayTimer = 0f;
-
-            TagEffectPack pack = new TagEffectPack();
-            TagEffectsLibrary.PlayEffect(GorillaTagger.Instance.offlineVRRig.rightHandTransform, false, 0.35f, type, pack, pack, GorillaTagger.Instance.rightHandTransform.rotation);
         }
 
         public static (Vector3 position, Quaternion rotation, Vector3 up, Vector3 forward, Vector3 right) TrueRightHand()
