@@ -39,6 +39,7 @@ bld/
 **/.vs/
 **/.idea/
 **/.vscode/
+**/ascs/
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/
