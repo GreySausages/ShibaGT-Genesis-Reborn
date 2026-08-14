@@ -314,7 +314,7 @@ namespace ShibaGTGenesisReborn.Menu
             Application.targetFrameRate = aa;
         }
         #endregion
-
+ 
         #region Movement
         private static float PullPower = 0.07f;
         private static float UpHillPower = 0.065f;
