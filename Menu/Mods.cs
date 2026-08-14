@@ -781,7 +781,7 @@ namespace ShibaGTGenesisReborn.Menu
             RPCProt();
         }
         #endregion
- 
+
         #region Fun
         public static float delay;
         public static bool enablebracelet;
