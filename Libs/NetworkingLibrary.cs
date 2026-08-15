@@ -102,7 +102,7 @@ namespace ShibaGTGenesisReborn.Libs
 
         void Update()
         {
-            if (!NetworkEnabled || !PhotonNetwork.InRoom || trackedObjects.Count == 0) 
+            if (!NetworkEnabled || !NetworkSystem.Instance.InRoom || trackedObjects.Count == 0) 
                 return;
             
             if (Time.time - lastSyncTime >= syncInterval)
@@ -433,7 +433,7 @@ namespace ShibaGTGenesisReborn.Libs
 
         private void OnPlayerJoined(NetPlayer player)
         {
-            if (!NetworkEnabled || !PhotonNetwork.InRoom) 
+            if (!NetworkEnabled || !NetworkSystem.Instance.InRoom) 
                 return;
             
             SendEvent(RequestEvent, player.ActorNumber);
@@ -469,7 +469,7 @@ namespace ShibaGTGenesisReborn.Libs
 
         public void RegisterObject(GameObject obj)
         {
-            if (obj == null || !NetworkEnabled || !PhotonNetwork.InRoom) 
+            if (obj == null || !NetworkEnabled || !NetworkSystem.Instance.InRoom) 
                 return;
             
             string objectId = GenerateObjectId();
@@ -584,7 +584,7 @@ namespace ShibaGTGenesisReborn.Libs
 
         public void SendEvent(string command, ReceiverGroup target, params object[] parameters)
         {
-            if (!PhotonNetwork.InRoom) 
+            if (!NetworkSystem.Instance.InRoom) 
                 return;
             
             object[] data = new object[] { command }.Concat(parameters).ToArray();
@@ -595,7 +595,7 @@ namespace ShibaGTGenesisReborn.Libs
 
         public void SendEvent(string command, int targetActor, params object[] parameters)
         {
-            if (!PhotonNetwork.InRoom) 
+            if (!NetworkSystem.Instance.InRoom) 
                 return;
             
             object[] data = new object[] { command }.Concat(parameters).ToArray();
@@ -632,7 +632,7 @@ namespace ShibaGTGenesisReborn.Libs
         {
             Debug.Log("=== NETWORKING STATUS ===");
             Debug.Log($"NetworkEnabled: {NetworkEnabled}");
-            Debug.Log($"In Room: {PhotonNetwork.InRoom}");
+            Debug.Log($"In Room: {NetworkSystem.Instance.InRoom}");
             Debug.Log($"Tracked Objects: {trackedObjects.Count}");
             Debug.Log($"Pending Syncs: {pendingSync.Count}");
             Debug.Log($"Events Received: {eventCount}");
@@ -645,7 +645,7 @@ namespace ShibaGTGenesisReborn.Libs
         {
             NetworkEnabled = enable;
             
-            if (enable && PhotonNetwork.InRoom)
+            if (enable && NetworkSystem.Instance.InRoom)
             {
                 SendEvent(RequestEvent, ReceiverGroup.Others);
             }
@@ -707,7 +707,7 @@ namespace ShibaGTGenesisReborn.Libs
                 trackedObjects.Remove(id);
                 pendingSync.Remove(id);
                 
-                if (NetworkEnabled && PhotonNetwork.InRoom)
+                if (NetworkEnabled && NetworkSystem.Instance.InRoom)
                     SendEvent(DestroyEvent, ReceiverGroup.Others, id);
             }
         }

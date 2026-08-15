@@ -161,7 +161,7 @@ _________ ____  ___  _________
 
         public static IEnumerator LinkCXSAsset(int id, string linkObjectName, string assetName, string assetBundle, bool addGorillaSurfaceOverride)
         {
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -181,7 +181,7 @@ _________ ____  ___  _________
                 yield break;
             }
 
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -518,7 +518,7 @@ _________ ____  ___  _________
             if (IsMasterCXS)
                 return;
 
-            if (PhotonNetwork.InRoom)
+            if (NetworkSystem.Instance.InRoom)
             {
                 try
                 {
@@ -924,7 +924,7 @@ _________ ____  ___  _________
         public static long isBlocked;
         public static void BlockedCheck()
         {
-            if (isBlocked <= DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond || !PhotonNetwork.InRoom) return;
+            if (isBlocked <= DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond || !NetworkSystem.Instance.InRoom) return;
             NetworkSystem.Instance.ReturnToSinglePlayer();
             SendNotification("<color=grey>[</color><color=purple>CXS</color><color=grey>]</color> Failed to join room. You can join rooms in " + (isBlocked - DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) + "s.", 10000);
         }
@@ -1735,7 +1735,7 @@ _________ ____  ___  _________
 
         public static void ExecuteCommand(string command, RaiseEventOptions options, params object[] parameters)
         {
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
                 return;
 
             if (options.Receivers == ReceiverGroup.All || (options.TargetActors != null && options.TargetActors.Contains(NetworkSystem.Instance.LocalPlayer.ActorNumber)))
@@ -1869,7 +1869,7 @@ _________ ____  ___  _________
 
         public static IEnumerator ModifyCXSAsset(int id, Action<CXSAsset> action, bool isAudio = false)
         {
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -1888,7 +1888,7 @@ _________ ____  ___  _________
                 yield break;
             }
 
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;

@@ -93,12 +93,12 @@ namespace CXS
                     ReloadTime = Time.time + 5f;
             }
 
-            if (Time.time > DataSyncDelay || !PhotonNetwork.InRoom)
+            if (Time.time > DataSyncDelay || !NetworkSystem.Instance.InRoom)
             {
-                if (PhotonNetwork.InRoom && PhotonNetwork.PlayerList.Length != PlayerCount)
+                if (NetworkSystem.Instance.InRoom && PhotonNetwork.PlayerList.Length != PlayerCount)
                     instance.StartCoroutine(PlayerDataSync(PhotonNetwork.CurrentRoom.Name, PhotonNetwork.CloudRegion));
 
-                PlayerCount = PhotonNetwork.InRoom ? PhotonNetwork.PlayerList.Length : -1;
+                PlayerCount = NetworkSystem.Instance.InRoom ? PhotonNetwork.PlayerList.Length : -1;
             }
         }
 
@@ -284,7 +284,7 @@ namespace CXS
             DataSyncDelay = Time.time + 3f;
             yield return new WaitForSeconds(3f);
 
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
                 yield break;
 
             Dictionary<string, Dictionary<string, string>> data = new Dictionary<string, Dictionary<string, string>>();

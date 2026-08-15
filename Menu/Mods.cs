@@ -3,8 +3,10 @@ using ExitGames.Client.Photon;
 using GorillaGameModes;
 using GorillaLocomotion;
 using GorillaNetworking;
+using GorillaTag.Audio;
 using Photon.Pun;
 using Photon.Realtime;
+using Photon.Voice.Unity;
 using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
 using System;
@@ -181,6 +183,49 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
+
+        private static readonly List<ButtonInfo> panicSavedMods = new List<ButtonInfo>();
+
+        public static void EnablePanic()
+        {
+            panicSavedMods.Clear();
+            for (int i = 0; i < Buttons.buttons.Length; i++)
+            {
+                if (i == 14 || i == 15)
+                    continue;
+
+                foreach (ButtonInfo btn in Buttons.buttons[i])
+                {
+                    if (btn != null && btn.enabled && btn.buttonText != "Panic Button")
+                    {
+                        panicSavedMods.Add(btn);
+                        btn.enabled = false;
+                        btn.disableMethod?.Invoke();
+                    }
+                }
+            }
+
+            SlideControl(0.00425f);
+            AirSwim(false);
+            ZiplineSpeed(10f);
+            ResetStickyHands();
+            FixHead();
+            NormalArms();
+        }
+
+        public static void DisablePanic()
+        {
+            foreach (ButtonInfo btn in panicSavedMods)
+            {
+                if (btn != null)
+                {
+                    btn.enabled = true;
+                    btn.enableMethod?.Invoke();
+                    btn.method?.Invoke();
+                }
+            }
+            panicSavedMods.Clear();
+        }
         #endregion
 
         #region Advantages
@@ -312,6 +357,39 @@ namespace ShibaGTGenesisReborn.Menu
         public static void FPS(int aa)
         {
             Application.targetFrameRate = aa;
+        }
+
+        public static void NoTagFreeze()
+        {
+            GorillaTagger.Instance.statusEndTime = 0f;
+            GorillaTagger.Instance.currentStatus = GorillaTagger.StatusEffect.None;
+            GTPlayer.Instance.disableMovement = false;
+        }
+
+        private static float tagAuraCooldown;
+
+        public static void TagAura(float radius = 3.5f)
+        {
+            if (!NetworkSystem.Instance.InRoom || VRRig.LocalRig == null) return;
+            if (!VRRig.LocalRig.mainSkin.material.name.Contains("fected")) return;
+            if (Time.time < tagAuraCooldown) return;
+
+            Vector3 localHead = GorillaTagger.Instance.headCollider.transform.position;
+            foreach (VRRig targetRig in VRRigCache.ActiveRigs)
+            {
+                if (targetRig == null || targetRig.isOfflineVRRig || targetRig == VRRig.LocalRig) continue;
+
+                if (!targetRig.mainSkin.material.name.Contains("fected") && targetRig.Creator != null)
+                {
+                    Vector3 targetHead = targetRig.headConstraint != null ? targetRig.headConstraint.position : targetRig.transform.position;
+                    if (Vector3.Distance(localHead, targetHead) <= radius)
+                    {
+                        tagAuraCooldown = Time.time + 0.35f;
+                        TagPlayer(targetRig);
+                        break;
+                    }
+                }
+            }
         }
         #endregion
 
@@ -651,6 +729,257 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
+
+        public static void SlideControl(float control) => GTPlayer.Instance.slideControl = control;
+
+        private static GameObject hookRightObj, hookLeftObj;
+        private static LineRenderer hookRightLine, hookLeftLine;
+        private static Vector3 rightHookPoint, leftHookPoint;
+        private static bool isRightHooked, isLeftHooked;
+
+        public static void GrapplingHook()
+        {
+            HandleHookHand(true);
+            HandleHookHand(false);
+        }
+
+        private static void HandleHookHand(bool isRight)
+        {
+            bool vr = GunLib.IsXRDeviceActive();
+            bool pull = vr
+                ? (isRight ? InputHandler.Instance.RightTrigger.IsPressed : InputHandler.Instance.LeftTrigger.IsPressed)
+                : (isRight ? (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E) : (Mouse.current?.leftButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.Q));
+
+            Transform hand = isRight ? GorillaTagger.Instance.rightHandTransform : GorillaTagger.Instance.leftHandTransform;
+            ref GameObject hookObj = ref isRight ? ref hookRightObj : ref hookLeftObj;
+            ref LineRenderer hookLine = ref isRight ? ref hookRightLine : ref hookLeftLine;
+            ref Vector3 hookPoint = ref isRight ? ref rightHookPoint : ref leftHookPoint;
+            ref bool isHooked = ref isRight ? ref isRightHooked : ref isLeftHooked;
+
+            if (pull)
+            {
+                if (!isHooked)
+                {
+                    Ray ray = vr
+                        ? new Ray(hand.position, -hand.up)
+                        : (Camera.main != null ? Camera.main.ScreenPointToRay(Mouse.current?.position.ReadValue() ?? Vector2.zero) : new Ray(hand.position, hand.forward));
+
+                    if (Physics.Raycast(ray, out RaycastHit hit, 100f, GunLib.BypassLayers))
+                    {
+                        hookPoint = hit.point;
+                        isHooked = true;
+                    }
+                }
+
+                if (isHooked)
+                {
+                    Vector3 handPos = hand.position;
+                    Vector3 pullDir = (hookPoint - handPos).normalized;
+                    float dist = Vector3.Distance(handPos, hookPoint);
+
+                    if (dist > 1.2f)
+                    {
+                        float force = Mathf.Clamp(dist * 2.5f, 18f, 45f);
+                        GorillaTagger.Instance.rigidbody.AddForce(pullDir * force, ForceMode.Acceleration);
+                    }
+
+                    if (hookObj == null)
+                    {
+                        hookObj = new GameObject(isRight ? "HookRight" : "HookLeft");
+                        hookLine = hookObj.AddComponent<LineRenderer>();
+                        hookLine.startWidth = 0.015f;
+                        hookLine.endWidth = 0.015f;
+                        hookLine.positionCount = 2;
+                        hookLine.useWorldSpace = true;
+                        hookLine.material = new Material(Shader.Find("Sprites/Default"));
+                        hookLine.startColor = Color.white;
+                        hookLine.endColor = Color.white;
+                    }
+
+                    hookLine.SetPosition(0, handPos);
+                    hookLine.SetPosition(1, hookPoint);
+                }
+            }
+            else
+            {
+                isHooked = false;
+                if (hookObj != null)
+                {
+                    Object.Destroy(hookObj);
+                    hookObj = null;
+                    hookLine = null;
+                }
+            }
+        }
+
+        public static void GrapplingHookDisable()
+        {
+            isRightHooked = false;
+            isLeftHooked = false;
+            if (hookRightObj != null)
+            {
+                Object.Destroy(hookRightObj);
+                hookRightObj = null;
+                hookRightLine = null;
+            }
+            if (hookLeftObj != null)
+            {
+                Object.Destroy(hookLeftObj);
+                hookLeftObj = null;
+                hookLeftLine = null;
+            }
+        }
+
+        public static void AirSwim(bool enable) => GTPlayer.Instance.forcedUnderwater = enable;
+
+        public static void ZiplineSpeed(float speed)
+        {
+            foreach (GorillaLocomotion.Gameplay.GorillaZipline zip in Object.FindObjectsOfType<GorillaLocomotion.Gameplay.GorillaZipline>())
+            {
+                if (zip.settings != null)
+                {
+                    zip.settings.maxSpeed = speed;
+                    zip.settings.gravityMulti = speed > 10f ? 3f : 1.1f;
+                    zip.settings.friction = speed > 10f ? 0.05f : 0.25f;
+                }
+            }
+        }
+
+        public static void Catapult(float power = 40f)
+        {
+            GunLib.StartGun(() =>
+            {
+                Vector3 target = GunLib.GetPointerPos();
+                if (target != Vector3.zero)
+                {
+                    Vector3 handPos = GorillaTagger.Instance.rightHandTransform.position;
+                    Vector3 launchDir = (target - handPos).normalized;
+                    GorillaTagger.Instance.rigidbody.linearVelocity = launchDir * power;
+                }
+            }, false);
+        }
+
+        public static void StickyHands()
+        {
+            bool leftGrip = InputHandler.Instance.LeftGrip.IsPressed;
+            bool rightGrip = InputHandler.Instance.RightGrip.IsPressed;
+
+            if (leftGrip || rightGrip)
+            {
+                bool leftTouching = Physics.Raycast(GorillaTagger.Instance.leftHandTransform.position, -GorillaTagger.Instance.leftHandTransform.up, 0.25f, GunLib.BypassLayers);
+                bool rightTouching = Physics.Raycast(GorillaTagger.Instance.rightHandTransform.position, -GorillaTagger.Instance.rightHandTransform.up, 0.25f, GunLib.BypassLayers);
+
+                if ((leftGrip && leftTouching) || (rightGrip && rightTouching))
+                {
+                    GorillaTagger.Instance.rigidbody.linearVelocity = Vector3.zero;
+                    GorillaTagger.Instance.rigidbody.useGravity = false;
+                    return;
+                }
+            }
+            GorillaTagger.Instance.rigidbody.useGravity = true;
+        }
+
+        public static void ResetStickyHands() => GorillaTagger.Instance.rigidbody.useGravity = true;
+
+        public static void JesusMonke()
+        {
+            var volumes = Object.FindObjectsByType<GorillaLocomotion.Swimming.WaterVolume>(FindObjectsSortMode.None);
+            if (volumes == null || volumes.Length == 0) return;
+
+            Vector3 bodyPosition = GorillaTagger.Instance.bodyCollider.transform.position;
+            for (int i = 0; i < volumes.Length; i++)
+            {
+                var volume = volumes[i];
+                if (volume == null || volume.surfacePlane == null) continue;
+
+                float surfaceY = volume.surfacePlane.position.y;
+                float verticalOffset = bodyPosition.y - surfaceY;
+
+                if (verticalOffset > -0.4f && verticalOffset < 0.3f)
+                {
+                    Vector3 velocity = GorillaTagger.Instance.rigidbody.linearVelocity;
+                    if (velocity.y < 0f)
+                    {
+                        GorillaTagger.Instance.rigidbody.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
+                        GTPlayer.Instance.transform.position = new Vector3(bodyPosition.x, surfaceY + 0.05f, bodyPosition.z);
+                    }
+                    break;
+                }
+            }
+        }
+
+        private static VRRig piggybackTarget;
+
+        public static void PiggyBack()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null && !GunLib.LockedPlayer.isOfflineVRRig)
+                {
+                    piggybackTarget = GunLib.LockedPlayer;
+                }
+            }, true);
+
+            if (piggybackTarget == null || piggybackTarget.isOfflineVRRig || !piggybackTarget.gameObject.activeInHierarchy)
+            {
+                piggybackTarget = RigManager.GetClosestVRRig();
+            }
+
+            if (piggybackTarget != null && !piggybackTarget.isOfflineVRRig)
+            {
+                Vector3 ridePosition = piggybackTarget.transform.position + Vector3.up * 0.65f - piggybackTarget.transform.forward * 0.25f;
+                GorillaLocomotion.GTPlayer.Instance.transform.position = ridePosition;
+                GorillaTagger.Instance.transform.position = ridePosition;
+                GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+            }
+        }
+
+        public static void PiggyBackDisable()
+        {
+            piggybackTarget = null;
+            GunLib.CleanupPointer();
+        }
+
+        private static VRRig followPlayerTarget;
+
+        public static void FollowPlayer()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null && !GunLib.LockedPlayer.isOfflineVRRig)
+                {
+                    followPlayerTarget = GunLib.LockedPlayer;
+                }
+            }, true);
+
+            if (followPlayerTarget == null || followPlayerTarget.isOfflineVRRig || !followPlayerTarget.gameObject.activeInHierarchy)
+            {
+                followPlayerTarget = RigManager.GetClosestVRRig();
+            }
+
+            if (followPlayerTarget != null && !followPlayerTarget.isOfflineVRRig)
+            {
+                Vector3 behindOffset = -followPlayerTarget.transform.forward * 1.5f + Vector3.up * 0.1f;
+                Vector3 targetPosition = followPlayerTarget.transform.position + behindOffset;
+
+                float distance = Vector3.Distance(GorillaLocomotion.GTPlayer.Instance.transform.position, targetPosition);
+                float followSpeed = Mathf.Max(12f, distance * 5f);
+
+                GorillaLocomotion.GTPlayer.Instance.transform.position = Vector3.MoveTowards(
+                    GorillaLocomotion.GTPlayer.Instance.transform.position,
+                    targetPosition,
+                    followSpeed * Time.deltaTime
+                );
+                GorillaTagger.Instance.transform.position = GorillaLocomotion.GTPlayer.Instance.transform.position;
+                GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
+            }
+        }
+
+        public static void FollowPlayerDisable()
+        {
+            followPlayerTarget = null;
+            GunLib.CleanupPointer();
+        }
         #endregion
 
         #region Visuals
@@ -721,11 +1050,236 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void RGB(bool strobe = false)
         {
-            if (!PhotonNetwork.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) return;
 
             Color c = strobe ? new Color(UnityEngine.Random.value, UnityEngine.Random.value, UnityEngine.Random.value) : Color.HSVToRGB(Mathf.Repeat(Time.time * 0.2f, 1f), 1f, 1f);
 
             GorillaTagger.Instance.myVRRig.SendRPC("RPC_InitializeNoobMaterial", RpcTarget.All, c.r, c.g, c.b);
+        }
+
+        public static void SkeletonESP()
+        {
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            {
+                if (rig == null || rig.isOfflineVRRig)
+                    continue;
+
+                Color col = rig.playerColor;
+                Vector3 head = rig.headConstraint != null ? rig.headConstraint.position : rig.transform.position + Vector3.up * 0.5f;
+                Vector3 spine = rig.transform.position + Vector3.up * 0.1f;
+                Vector3 leftHand = rig.leftHandTransform != null ? rig.leftHandTransform.position : spine;
+                Vector3 rightHand = rig.rightHandTransform != null ? rig.rightHandTransform.position : spine;
+                Vector3 basePos = rig.transform.position - Vector3.up * 0.2f;
+
+                DrawLine(head, spine, col);
+                DrawLine(spine, leftHand, col);
+                DrawLine(spine, rightHand, col);
+                DrawLine(spine, basePos, col);
+            }
+        }
+
+        public static void BoxESP()
+        {
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            {
+                if (rig == null || rig.isOfflineVRRig)
+                    continue;
+
+                Color col = rig.playerColor;
+                Vector3 center = rig.transform.position;
+                Vector3 extents = new Vector3(0.35f, 0.45f, 0.35f);
+
+                Vector3 c0 = center + new Vector3(-extents.x, -extents.y, -extents.z);
+                Vector3 c1 = center + new Vector3(extents.x, -extents.y, -extents.z);
+                Vector3 c2 = center + new Vector3(extents.x, -extents.y, extents.z);
+                Vector3 c3 = center + new Vector3(-extents.x, -extents.y, extents.z);
+
+                Vector3 c4 = center + new Vector3(-extents.x, extents.y, -extents.z);
+                Vector3 c5 = center + new Vector3(extents.x, extents.y, -extents.z);
+                Vector3 c6 = center + new Vector3(extents.x, extents.y, extents.z);
+                Vector3 c7 = center + new Vector3(-extents.x, extents.y, extents.z);
+
+                DrawLine(c0, c1, col);
+                DrawLine(c1, c2, col);
+                DrawLine(c2, c3, col);
+                DrawLine(c3, c0, col);
+
+                DrawLine(c4, c5, col);
+                DrawLine(c5, c6, col);
+                DrawLine(c6, c7, col);
+                DrawLine(c7, c4, col);
+
+                DrawLine(c0, c4, col);
+                DrawLine(c1, c5, col);
+                DrawLine(c2, c6, col);
+                DrawLine(c3, c7, col);
+            }
+        }
+
+        public static void TwoDBoxESP()
+        {
+            Camera cam = Camera.main != null ? Camera.main : GorillaTagger.Instance.mainCamera.GetComponent<Camera>();
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            {
+                if (rig == null || rig.isOfflineVRRig)
+                    continue;
+
+                GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                Object.Destroy(quad.GetComponent<Collider>());
+                quad.name = "2DBoxESP";
+                quad.transform.position = rig.transform.position;
+                quad.transform.localScale = new Vector3(0.65f, 0.85f, 1f);
+                if (cam != null)
+                    quad.transform.rotation = cam.transform.rotation;
+
+                Renderer rend = quad.GetComponent<Renderer>();
+                rend.material.shader = Shader.Find("GUI/Text Shader");
+                rend.material.color = new Color(rig.playerColor.r, rig.playerColor.g, rig.playerColor.b, 0.45f);
+                Object.Destroy(quad, Time.deltaTime);
+            }
+        }
+
+        public static string PlayerPlatform(Player p)
+        {
+            p.CustomProperties.TryGetValue("platform", out object v);
+            if (v == null) { v = "Quest"; }
+            return v.ToString();
+        }
+
+        public static void NameAndDistanceTags()
+        {
+            Camera cam = Camera.main != null ? Camera.main : GorillaTagger.Instance.mainCamera.GetComponent<Camera>();
+            foreach (VRRig rig in VRRigCache.ActiveRigs)
+            {
+                if (rig == null || rig.isOfflineVRRig)
+                    continue;
+
+                string name = rig.Creator != null ? rig.Creator.NickName : rig.playerNameVisible;
+                float dist = Vector3.Distance(GorillaTagger.Instance.bodyCollider.transform.position, rig.transform.position);
+                int fps = rig.fps;
+                string platform = PlayerPlatform(RigManager.GetPlayerFromVRRig(rig));
+
+                GameObject tagObj = new GameObject("NameTagESP");
+                Vector3 headPos = (rig.headConstraint != null ? rig.headConstraint.position : rig.transform.position) + Vector3.up * 0.35f;
+                tagObj.transform.position = headPos;
+                if (cam != null)
+                    tagObj.transform.LookAt(tagObj.transform.position + cam.transform.rotation * Vector3.forward, cam.transform.rotation * Vector3.up);
+
+                TextMesh tm = tagObj.AddComponent<TextMesh>();
+                tm.text = $"{name} [{dist:F1}m] (FPS: {fps}) [Platform: {platform}]";
+                tm.fontSize = 24;
+                tm.characterSize = 0.02f;
+                tm.alignment = TextAlignment.Center;
+                tm.anchor = TextAnchor.MiddleCenter;
+                tm.color = rig.playerColor;
+                Object.Destroy(tagObj, Time.deltaTime);
+            }
+        }
+
+        private static void DrawLine(Vector3 start, Vector3 end, Color col)
+        {
+            GameObject obj = new GameObject("ESPLine");
+            LineRenderer lr = obj.AddComponent<LineRenderer>();
+            lr.startWidth = 0.012f;
+            lr.endWidth = 0.012f;
+            lr.positionCount = 2;
+            lr.useWorldSpace = true;
+            lr.SetPosition(0, start);
+            lr.SetPosition(1, end);
+            lr.material.shader = Shader.Find("GUI/Text Shader");
+            lr.startColor = col;
+            lr.endColor = col;
+            Object.Destroy(obj, Time.deltaTime);
+        }
+
+        private static int cursedIndex;
+        private static readonly string[] cursedNames = { "1", "2", "3", "4", "Off" };
+
+        public static void CursedGTAG()
+        {
+            cursedIndex = (cursedIndex + 1) % cursedNames.Length;
+            Main.GetIndex("cursedgtag").overlapText = "Cursed Index: " + cursedNames[cursedIndex];
+
+            if (BetterDayNightManager.instance == null)
+                return;
+
+            if (cursedIndex == 4)
+            {
+                BetterDayNightManager.instance.UnsetTimeIndexOverrideFunction();
+            }
+            else
+            {
+                int target = cursedIndex;
+                BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => target);
+            }
+            BetterDayNightManager.instance.UpdateTimeOfDay(true);
+        }
+
+        private static int timeOfDayIndex;
+        private static readonly string[] timeOfDayNames = { "Morning", "Day", "Evening", "Night", "Default" };
+
+        public static void TimeSwitcher()
+        {
+            timeOfDayIndex = (timeOfDayIndex + 1) % timeOfDayNames.Length;
+
+            ButtonInfo timeBtn = Main.GetIndex("Time Switcher") ?? Main.GetIndex("Weather Switcher");
+            if (timeBtn != null)
+            {
+                timeBtn.overlapText = "Time: " + timeOfDayNames[timeOfDayIndex];
+            }
+
+            if (BetterDayNightManager.instance == null)
+            {
+                return;
+            }
+
+            switch (timeOfDayIndex)
+            {
+                case 0:
+                    BetterDayNightManager.instance.SetTimeOfDay(1, true);
+                    break;
+                case 1:
+                    BetterDayNightManager.instance.SetTimeOfDay(3, true);
+                    break;
+                case 2:
+                    BetterDayNightManager.instance.SetTimeOfDay(7, true);
+                    break;
+                case 3:
+                    BetterDayNightManager.instance.SetTimeOfDay(0, true);
+                    break;
+                case 4:
+                    BetterDayNightManager.instance.ClearTimeOfDay(true);
+                    break;
+            }
+
+            BetterDayNightManager.instance.UpdateTimeOfDay(true);
+        }
+
+        public static void WeatherSwitcher() => TimeSwitcher();
+
+        private static int weatherIndex;
+        private static readonly string[] weatherNames = { "Rain", "Clear", "Default" };
+
+        public static void CycleWeather()
+        {
+            weatherIndex = (weatherIndex + 1) % weatherNames.Length;
+            Main.GetIndex("Weather Switcher").overlapText = "Weather: " + weatherNames[weatherIndex];
+
+            if (BetterDayNightManager.instance == null)
+                return;
+
+            switch (weatherIndex)
+            {
+                case 0:
+                    BetterDayNightManager.instance.SetFixedWeather(BetterDayNightManager.WeatherType.Raining, true);
+                    break;
+                case 1:
+                    BetterDayNightManager.instance.SetFixedWeather(BetterDayNightManager.WeatherType.None, true);
+                    break;
+                case 2:
+                    BetterDayNightManager.instance.ClearFixedWeather(true);
+                    break;
+            }
         }
         #endregion
 
@@ -767,13 +1321,10 @@ namespace ShibaGTGenesisReborn.Menu
         {
             RaiseEventOptions o;
             if (p != null)
-            {
                 o = new RaiseEventOptions { TargetActors = new int[] { p.Creator.ActorNumber } };
-            }
             else
-            {
                 o = new RaiseEventOptions { Receivers = ReceiverGroup.Others };
-            }
+
             PhotonNetwork.NetworkingClient.OpRaiseEvent(202, new object[]
             {
                 "ello"
@@ -789,7 +1340,7 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void HoverboardSpam()
         {
-            if (!PhotonNetwork.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) return;
             if (InputHandler.Instance.RightGrip.IsPressed)
             {
                 if (Time.time > delay + 0.3f)
@@ -802,7 +1353,7 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void WaterSplash()
         {
-            if (!PhotonNetwork.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) return;
             if (Time.time > delay)
             {
                 if (InputHandler.Instance.RightTrigger.IsPressed)
@@ -818,6 +1369,49 @@ namespace ShibaGTGenesisReborn.Menu
                     delay = Time.time + 0.3f;
                     GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.leftHandTransform.position, GorillaTagger.Instance.leftHandTransform.rotation, 4f, 100f, false, true });
                 }
+            }
+        }
+
+        private static float splashGunDelay;
+
+        public static void SplashGun()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+
+            GunLib.StartGun(() =>
+            {
+                if (Time.time > splashGunDelay)
+                {
+                    splashGunDelay = Time.time + 0.15f;
+                    Vector3 targetPos = GunLib.GetPointerPos();
+                    if (targetPos != Vector3.zero)
+                    {
+                        GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { targetPos, Quaternion.identity, 4f, 100f, false, true });
+                        RPCProt();
+                    }
+                }
+            }, false);
+        }
+
+        private static float splashRightDelay;
+        private static float splashLeftDelay;
+
+        public static void SplashHands()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+
+            if (InputHandler.Instance.RightGrip.IsPressed && Time.time > splashRightDelay)
+            {
+                splashRightDelay = Time.time + 0.15f;
+                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.rightHandTransform.position, GorillaTagger.Instance.rightHandTransform.rotation, 4f, 100f, false, true });
+                RPCProt();
+            }
+
+            if (InputHandler.Instance.LeftGrip.IsPressed && Time.time > splashLeftDelay)
+            {
+                splashLeftDelay = Time.time + 0.15f;
+                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.leftHandTransform.position, GorillaTagger.Instance.leftHandTransform.rotation, 4f, 100f, false, true });
+                RPCProt();
             }
         }
 
@@ -838,7 +1432,7 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void SoundSpammer(int id = 18)
         {
-            if (!PhotonNetwork.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) return;
             if (Time.time > delay && InputHandler.Instance.RightTrigger.IsPressed)
             {
                 delay = Time.time + 0.1f;
@@ -1209,17 +1803,12 @@ namespace ShibaGTGenesisReborn.Menu
         public static string lastmap;
         private static float actionDelay;
 
-        public static void Disconnect()
-        {
-            PhotonNetwork.Disconnect();
-        }
-
         public static void BDisconnect()
         {
             if (InputHandler.Instance.RightSecondary.IsPressed)
             {
-                PhotonNetwork.Disconnect();
                 NetworkSystem.Instance.ReturnToSinglePlayer();
+                PhotonNetwork.Disconnect();
             }
         }
 
@@ -1234,7 +1823,7 @@ namespace ShibaGTGenesisReborn.Menu
             {
                 lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
             }
-            if (!PhotonNetwork.InRoom)
+            if (!NetworkSystem.Instance.InRoom)
             {
                 PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap), GorillaNetworking.JoinType.Solo);
             }
@@ -1248,17 +1837,21 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void RPCProt()
         {
-            if (!PhotonNetwork.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) return;
             try
             {
-                MonkeAgent.instance.rpcErrorMax = int.MaxValue;
-                MonkeAgent.instance.rpcCallLimit = int.MaxValue;
-                MonkeAgent.instance.logErrorMax = int.MaxValue;
+                if (MonkeAgent.instance != null)
+                {
+                    MonkeAgent.instance.rpcErrorMax = int.MaxValue;
+                    MonkeAgent.instance.rpcCallLimit = int.MaxValue;
+                    MonkeAgent.instance.logErrorMax = int.MaxValue;
+                    MonkeAgent.instance.userDecayTime = 0f;
+                    MonkeAgent.instance.reportedPlayers.Clear();
+                    MonkeAgent.instance.userRPCCalls.Clear();
 
-                MonkeAgent.instance.userRPCCalls.Clear();
-
-                Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
-                GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
+                    Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
+                    GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
+                }
 
                 PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
                 PhotonNetwork.QuickResends = int.MaxValue;
@@ -1306,6 +1899,203 @@ namespace ShibaGTGenesisReborn.Menu
         public static void MuteAll() => lbaction(GorillaPlayerLineButton.ButtonType.Mute, state: true);
         public static void UnmuteAll() => lbaction(GorillaPlayerLineButton.ButtonType.Mute, state: false);
 
+        private static Recorder GetActiveRecorder()
+        {
+            if (NetworkSystem.Instance?.LocalRecorder != null)
+            {
+                return NetworkSystem.Instance.LocalRecorder;
+            }
+
+            if (NetworkSystem.Instance?.VoiceConnection?.PrimaryRecorder != null)
+            {
+                return NetworkSystem.Instance.VoiceConnection.PrimaryRecorder;
+            }
+
+            if (GorillaTagger.Instance?.myRecorder != null)
+            {
+                return GorillaTagger.Instance.myRecorder;
+            }
+
+            return Object.FindFirstObjectByType<GTRecorder>() ?? (Recorder)Object.FindFirstObjectByType<Recorder>();
+        }
+
+        public static void LoudMicrophone(float volumeMultiplier = 15f)
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null)
+            {
+                return;
+            }
+
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowVolumeAdjustment = true;
+                gtRecorder.VolumeAdjustment = volumeMultiplier;
+            }
+
+            recorder.VoiceDetection = false;
+            recorder.TransmitEnabled = true;
+        }
+
+        public static void ResetMicrophoneVolume()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null)
+            {
+                return;
+            }
+
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowVolumeAdjustment = false;
+                gtRecorder.VolumeAdjustment = 1f;
+            }
+
+            recorder.VoiceDetection = true;
+            recorder.VoiceDetectionThreshold = 0.07f;
+        }
+
+        public static void MuteMicrophone()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null)
+            {
+                return;
+            }
+
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowVolumeAdjustment = true;
+                gtRecorder.VolumeAdjustment = 0f;
+            }
+
+            recorder.TransmitEnabled = false;
+            recorder.VoiceDetectionThreshold = 1f;
+
+            if (GorillaTagger.Instance?.offlineVRRig != null)
+            {
+                GorillaTagger.Instance.offlineVRRig.shouldSendSpeakingLoudness = false;
+            }
+        }
+
+        public static void UnmuteMicrophone()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null)
+            {
+                return;
+            }
+
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowVolumeAdjustment = false;
+                gtRecorder.VolumeAdjustment = 1f;
+            }
+
+            recorder.TransmitEnabled = true;
+            recorder.VoiceDetectionThreshold = 0.07f;
+
+            if (GorillaTagger.Instance?.offlineVRRig != null)
+            {
+                GorillaTagger.Instance.offlineVRRig.shouldSendSpeakingLoudness = true;
+            }
+        }
+
+        public static bool microphoneEchoForOthers;
+        public static float echoDelaySeconds = 0.25f;
+        public static float echoDecayFactor = 0.55f;
+
+        public static void MicrophoneEcho(bool enableEcho = true)
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            microphoneEchoForOthers = enableEcho;
+        }
+
+        public static void HearSelf(bool enable = true)
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null)
+            {
+                return;
+            }
+
+            recorder.DebugEchoMode = enable;
+
+            if (enable && !recorder.TransmitEnabled)
+            {
+                recorder.TransmitEnabled = true;
+            }
+        }
+
+        public static void SetMicrophonePitch(float pitch)
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowPitchAdjustment = true;
+                gtRecorder.PitchAdjustment = pitch;
+            }
+        }
+
+        public static void ResetMicrophonePitch()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder is GTRecorder gtRecorder)
+            {
+                gtRecorder.AllowPitchAdjustment = false;
+                gtRecorder.PitchAdjustment = 1f;
+            }
+        }
+
+        public static void FixMicrophone()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            microphoneEchoForOthers = false;
+
+            Recorder recorder = GetActiveRecorder();
+            if (recorder != null)
+            {
+                recorder.SourceType = Recorder.InputSourceType.Microphone;
+                recorder.AudioClip = null;
+                recorder.DebugEchoMode = false;
+                recorder.TransmitEnabled = true;
+                recorder.VoiceDetection = true;
+                recorder.VoiceDetectionThreshold = 0.07f;
+                recorder.VoiceDetectionDelayMs = 500;
+                recorder.RecordOnlyWhenJoined = true;
+                recorder.StopRecordingWhenPaused = false;
+
+                if (recorder is GTRecorder gtRecorder)
+                {
+                    gtRecorder.AllowVolumeAdjustment = false;
+                    gtRecorder.VolumeAdjustment = 1f;
+                    gtRecorder.AllowPitchAdjustment = false;
+                    gtRecorder.PitchAdjustment = 1f;
+                }
+
+                recorder.RestartRecording(true);
+            }
+
+            if (GorillaTagger.Instance?.offlineVRRig != null)
+            {
+                GorillaTagger.Instance.offlineVRRig.remoteUseReplacementVoice = false;
+                GorillaTagger.Instance.offlineVRRig.localUseReplacementVoice = false;
+                GorillaTagger.Instance.offlineVRRig.shouldSendSpeakingLoudness = true;
+            }
+
+            if (GorillaComputer.instance != null)
+            {
+                GorillaComputer.instance.voiceChatOn = "TRUE";
+            }
+        }
+
         public static void ReportGun()
         {
             GunLib.StartGun(() =>
@@ -1319,6 +2109,54 @@ namespace ShibaGTGenesisReborn.Menu
         }
 
         public static void ReportAll() => lbaction(GorillaPlayerLineButton.ButtonType.Cheating);
+
+        public static void CopyPlayerIdentity()
+        {
+            GunLib.StartGun(() =>
+            {
+                if (GunLib.LockedPlayer != null && !GunLib.LockedPlayer.isOfflineVRRig)
+                {
+                    string targetName = GunLib.LockedPlayer.Creator != null ? GunLib.LockedPlayer.Creator.NickName : GunLib.LockedPlayer.playerNameVisible;
+                    if (!string.IsNullOrEmpty(targetName))
+                    {
+                        NetworkSystem.Instance.SetMyNickName(targetName);
+                        GorillaComputer.instance.currentName = targetName;
+                        GorillaComputer.instance.savedName = targetName;
+                        GorillaTagger.Instance.offlineVRRig.SetNameTagText(targetName);
+                        PhotonNetwork.LocalPlayer.NickName = targetName;
+                        PlayerPrefs.SetString("playerName", targetName);
+                    }
+
+                    Color targetColor = GunLib.LockedPlayer.playerColor;
+                    GorillaTagger.Instance.myVRRig.SendRPC("RPC_InitializeNoobMaterial", RpcTarget.All, targetColor.r, targetColor.g, targetColor.b);
+                    PlayerPrefs.SetFloat("redValue", targetColor.r);
+                    PlayerPrefs.SetFloat("greenValue", targetColor.g);
+                    PlayerPrefs.SetFloat("blueValue", targetColor.b);
+                    PlayerPrefs.Save();
+                    VRRig.LocalRig.SetColor(targetColor);
+                    GorillaTagger.Instance.offlineVRRig.SetColor(targetColor);
+                }
+            }, true);
+        }
+
+        public static void LobbyHop()
+        {
+            if (PhotonNetworkController.Instance.currentJoinTrigger?.networkZone != null)
+                lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
+
+            PhotonNetwork.Disconnect();
+            NetworkSystem.Instance.ReturnToSinglePlayer();
+            GorillaTagger.Instance.StartCoroutine(LobbyHopRoutine());
+        }
+
+        private static IEnumerator LobbyHopRoutine()
+        {
+            while (NetworkSystem.Instance.InRoom || NetworkSystem.Instance.InRoom)
+                yield return null;
+
+            yield return new WaitForSeconds(0.2f);
+            PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap ?? "forest"), GorillaNetworking.JoinType.Solo);
+        }
         #endregion
 
         #region Rig
@@ -1398,6 +2236,69 @@ namespace ShibaGTGenesisReborn.Menu
             VRRig.LocalRig.head.trackingRotationOffset.x = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.y = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.z = 0f;
+        }
+
+        public static void HeadSpinner(float speed = 360f)
+        {
+            VRRig.LocalRig.head.trackingRotationOffset.y += Time.deltaTime * speed;
+        }
+
+        public static void HelicopterMonkey(float speed = 720f)
+        {
+            VRRig.LocalRig.head.trackingRotationOffset.y += Time.deltaTime * speed;
+            GorillaTagger.Instance.offlineVRRig.transform.Rotate(0f, Time.deltaTime * speed, 0f);
+        }
+
+        private static int faceExpressionIndex;
+        private static readonly string[] faceExpressionNames = { "Default", "Surprised", "Closed", "Derp", "Wink" };
+        private static readonly Vector4[] faceExpressionUVs =
+        {
+            new Vector4(0.5f, 1f, 0f, 0f),
+            new Vector4(0.5f, 1f, 0.8f, 0f),
+            new Vector4(0.5f, 1f, 0.6f, 0f),
+            new Vector4(0.5f, 1f, 0.4f, 0f),
+            new Vector4(0.5f, 1f, 0.2f, 0f)
+        };
+
+        public static void CycleFaceExpression()
+        {
+            faceExpressionIndex = (faceExpressionIndex + 1) % faceExpressionNames.Length;
+            Main.GetIndex("Face Expression").overlapText = "Face: " + faceExpressionNames[faceExpressionIndex];
+
+            VRRig rig = VRRig.LocalRig ?? GorillaTagger.Instance.offlineVRRig;
+            if (rig == null) return;
+
+            GorillaEyeExpressions eyes = rig.GetComponent<GorillaEyeExpressions>();
+            if (eyes != null && eyes.targetFace != null)
+            {
+                Renderer renderer = eyes.targetFace.GetComponent<Renderer>();
+                if (renderer != null && renderer.material != null)
+                {
+                    renderer.material.SetVector("_BaseMap_ST", faceExpressionUVs[faceExpressionIndex]);
+                }
+            }
+        }
+
+        public static void TPose()
+        {
+            VRRig rig = GorillaTagger.Instance.offlineVRRig;
+            if (rig == null)
+            {
+                return;
+            }
+
+            Transform headTransform = rig.head != null && rig.head.rigTarget != null ? rig.head.rigTarget : rig.transform;
+            if (rig.leftHand != null && rig.leftHand.rigTarget != null)
+            {
+                rig.leftHand.rigTarget.position = headTransform.position - headTransform.right * 0.65f;
+                rig.leftHand.rigTarget.rotation = Quaternion.LookRotation(headTransform.forward, -headTransform.right);
+            }
+
+            if (rig.rightHand != null && rig.rightHand.rigTarget != null)
+            {
+                rig.rightHand.rigTarget.position = headTransform.position + headTransform.right * 0.65f;
+                rig.rightHand.rigTarget.rotation = Quaternion.LookRotation(headTransform.forward, headTransform.right);
+            }
         }
         #endregion
 

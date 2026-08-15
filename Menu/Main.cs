@@ -1,4 +1,4 @@
-﻿using BepInEx;
+using BepInEx;
 using HarmonyLib;
 using Photon.Pun;
 using ShibaGTGenesisReborn.Classes;
@@ -405,6 +405,23 @@ namespace ShibaGTGenesisReborn.Menu
             canvasObject.AddComponent<GraphicRaycaster>();
             canvas.renderMode = RenderMode.WorldSpace;
             canvasScaler.dynamicPixelsPerUnit = 1000f;
+
+            int lastPage = 0;
+            if (buttonsType == 999)
+            {
+                lastPage = ((searchResults.Count + buttonsPerPage - 1) / buttonsPerPage) - 1;
+                if (lastPage < 0) lastPage = 0;
+            }
+            else if (buttonsType < buttons.Length)
+            {
+                lastPage = ((buttons[buttonsType].Length + buttonsPerPage - 1) / buttonsPerPage) - 1;
+                if (lastPage < 0) lastPage = 0;
+            }
+
+            if (pageNumber > lastPage || pageNumber < 0)
+            {
+                pageNumber = 0;
+            }
 
             Text text = new GameObject
             {
