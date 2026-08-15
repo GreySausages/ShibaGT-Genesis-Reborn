@@ -209,6 +209,7 @@ namespace ShibaGTGenesisReborn.Menu
             SlideControl(0.00425f);
             AirSwimDisable();
             JesusMonkeDisable();
+            TagAssistDisable();
             ZiplineSpeed(10f);
             ResetStickyHands();
             FixHead();
@@ -390,6 +391,65 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }
         }
+
+        private static float tagAssistCooldown;
+        private static VRRig tagAssistTarget;
+
+        public static void TagAssist(float assistRange = 8.5f, float pullSpeed = 22f)
+        {
+            if (!NetworkSystem.Instance.InRoom || VRRig.LocalRig == null) return;
+            if (!VRRig.LocalRig.mainSkin.material.name.Contains("fected")) return;
+
+            Vector3 localHead = GorillaTagger.Instance.headCollider.transform.position;
+            VRRig closestTarget = null;
+            float closestDistance = assistRange;
+
+            foreach (VRRig targetRig in VRRigCache.ActiveRigs)
+            {
+                if (targetRig == null || targetRig.isOfflineVRRig || targetRig == VRRig.LocalRig) continue;
+
+                if (!targetRig.mainSkin.material.name.Contains("fected") && targetRig.Creator != null)
+                {
+                    Vector3 targetPos = targetRig.headConstraint != null ? targetRig.headConstraint.position : targetRig.transform.position;
+                    float distance = Vector3.Distance(localHead, targetPos);
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+                        closestTarget = targetRig;
+                    }
+                }
+            }
+
+            tagAssistTarget = closestTarget;
+
+            if (tagAssistTarget != null)
+            {
+                Vector3 targetHead = tagAssistTarget.headConstraint != null ? tagAssistTarget.headConstraint.position : tagAssistTarget.transform.position;
+                Vector3 toTarget = (targetHead - localHead).normalized;
+
+                // Blatant velocity pull towards target runner
+                GorillaTagger.Instance.rigidbody.linearVelocity = toTarget * pullSpeed;
+
+                // Blatant long-reach magnetic arm snap
+                GorillaTagger.Instance.rightHandTransform.position = targetHead;
+                if (VRRig.LocalRig != null)
+                {
+                    VRRig.LocalRig.rightHandTransform.position = targetHead;
+                }
+
+                // Tag execution on reach/proximity
+                if (closestDistance <= 4.5f && Time.time > tagAssistCooldown)
+                {
+                    tagAssistCooldown = Time.time + 0.3f;
+                    TagPlayer(tagAssistTarget);
+                }
+            }
+        }
+
+        public static void TagAssistDisable()
+        {
+            tagAssistTarget = null;
+        }
         #endregion
 
         #region Movement
@@ -443,7 +503,7 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void Platforms(bool Invis = false)
         {
-            if (InputHandler.Instance.RightTrigger.IsPressed && PlatR == null)
+            if (InputHandler.Instance.RightGrip.IsPressed && PlatR == null)
             {
                 PlatR = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 PlatR.transform.localScale = scale;
@@ -453,7 +513,13 @@ namespace ShibaGTGenesisReborn.Menu
                 PlatR.GetComponent<Renderer>().material.color = PlatColor;
                 if (Invis) GameObject.Destroy(PlatR.GetComponent<Renderer>());
             }
-            if (!InputHandler.Instance.LeftGrip.IsPressed && PlatL == null)
+            if (!InputHandler.Instance.RightGrip.IsPressed && PlatR != null)
+            {
+                GameObject.Destroy(PlatR);
+                PlatR = null;
+            }
+
+            if (InputHandler.Instance.LeftGrip.IsPressed && PlatL == null)
             {
                 PlatL = GameObject.CreatePrimitive(PrimitiveType.Cube);
                 PlatL.transform.localScale = scale;
@@ -1769,9 +1835,9 @@ namespace ShibaGTGenesisReborn.Menu
             GorillaTagger.Instance.myVRRig.SendRPC("EnableNonCosmeticHandItemRPC", RpcTarget.All, false, false);
         }
 
-        public static void SoundSpammer(int id = 18)
+        public static void SoundSpammer(int id)
         {
-            if (!NetworkSystem.Instance.InRoom) return;
+            if (!NetworkSystem.Instance.InRoom) VRRig.LocalRig.PlayHandTapLocal(id, false, 999999f); ;
             if (Time.time > delay && InputHandler.Instance.RightTrigger.IsPressed)
             {
                 delay = Time.time + 0.1f;
@@ -2095,7 +2161,7 @@ namespace ShibaGTGenesisReborn.Menu
         {
             if (!(Time.time > spamDihlay)) return;
 
-            bool fireRight = ControllerInputPoller.instance.rightControllerSecondaryButton || Mouse.current.rightButton.isPressed;
+            bool fireRight = InputHandler.Instance.RightSecondary.IsPressed || Mouse.current.rightButton.isPressed;
 
             if (fireRight)
             {
@@ -2111,7 +2177,7 @@ namespace ShibaGTGenesisReborn.Menu
         {
             if (!(Time.time > spamDihlay)) return;
 
-            bool fireRight = ControllerInputPoller.instance.rightGrab || Mouse.current.rightButton.isPressed;
+            bool fireRight = InputHandler.Instance.RightGrip.IsPressed || Mouse.current.rightButton.isPressed;
 
             if (fireRight)
             {

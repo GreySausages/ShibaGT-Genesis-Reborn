@@ -9,10 +9,9 @@ namespace ShibaGTGenesisReborn.Classes
     internal class Button : MonoBehaviour
     {
         public string relatedText;
+        public ButtonInfo buttonInfo;
 
         public static float buttonCooldown = 0f;
-
-
 
         public void OnTriggerEnter(Collider collider)
         {
@@ -21,7 +20,7 @@ namespace ShibaGTGenesisReborn.Classes
                 buttonCooldown = Time.time + 0.2f;
                 GorillaTagger.Instance.StartVibration(rightHanded, GorillaTagger.Instance.tagHapticStrength / 2f, GorillaTagger.Instance.tagHapticDuration / 2f);
                 VRRig.LocalRig.PlayHandTapLocal((int)mods.num, rightHanded, 0.4f);
-                Toggle(this.relatedText);
+                Toggle(this.relatedText, this.buttonInfo);
             }
         }
     }

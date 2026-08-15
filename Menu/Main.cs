@@ -431,7 +431,7 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }.AddComponent<Text>();
             text.font = currentFont;
-            text.text = PluginInfo.Name;
+            text.text = PluginInfo.Name
             text.fontSize = 1;
             text.color = textColors[0];
             text.supportRichText = true;
@@ -660,7 +660,7 @@ namespace ShibaGTGenesisReborn.Menu
             gameObject.transform.localScale = what ? new Vector3(0.045f, 0.25f, 0.8936298f) : new Vector3(0.06f, 0.25f, 0.06f);
             gameObject.transform.localPosition = what ? new Vector3(0.56f, 0.657f, 0.0063f) : new Vector3(0.56f, -0.37f, 0.555f);
             gameObject.GetComponent<Renderer>().material.color = Color.black;
-            gameObject.AddComponent<Classes.Button>().relatedText = "PreviousPage";
+            gameObject.AddComponent<Classes.Button>().relatedText = "NextPage";
             if (what3)
             {
                 OutlineObj(gameObject, what2, what2, false, 3);
@@ -683,7 +683,7 @@ namespace ShibaGTGenesisReborn.Menu
             component = text.GetComponent<RectTransform>();
             component.localPosition = Vector3.zero;
             component.sizeDelta = new Vector2(0.2f, 0.03f);
-            component.localPosition = new Vector3(0.064f, 0f, 0.0678f);
+            component.localPosition = what ? new Vector3(0.064f, 0.195f, 0f) : new Vector3(0.064f, -0.115f, 0.215f);
             component.rotation = Quaternion.Euler(new Vector3(180f, 90f, 90f));
 
             gameObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -702,7 +702,7 @@ namespace ShibaGTGenesisReborn.Menu
             {
                 OutlineObj(gameObject, what2, what2, false, 3);
             }
-            gameObject.AddComponent<Classes.Button>().relatedText = "NextPage";
+            gameObject.AddComponent<Classes.Button>().relatedText = "PreviousPage";
 
             text = new GameObject
             {
@@ -721,7 +721,7 @@ namespace ShibaGTGenesisReborn.Menu
             component = text.GetComponent<RectTransform>();
             component.localPosition = Vector3.zero;
             component.sizeDelta = new Vector2(0.2f, 0.03f);
-            component.localPosition = new Vector3(0.064f, 0f, 0.105f);
+            component.localPosition = what ? new Vector3(0.064f, -0.195f, 0f) : new Vector3(0.064f, 0.115f, 0.215f);
             component.rotation = Quaternion.Euler(new Vector3(180f, 90f, 90f));
 
             ButtonInfo[] activeButtons;
@@ -795,7 +795,9 @@ namespace ShibaGTGenesisReborn.Menu
             gameObject.transform.rotation = Quaternion.identity;
             gameObject.transform.localScale = new Vector3(0.05f, 0.6f, 0.08f);
             gameObject.transform.localPosition = new Vector3(0.56f, 0.1f, 0.17f - offset);
-            gameObject.AddComponent<Classes.Button>().relatedText = method.buttonText;
+            Classes.Button btn = gameObject.AddComponent<Classes.Button>();
+            btn.relatedText = method.buttonText;
+            btn.buttonInfo = method;
             gameObject.GetComponent<Renderer>().material.color = new Color(0.06f, 0.06f, 0.06f);
             if (what3)
             {
@@ -813,7 +815,9 @@ namespace ShibaGTGenesisReborn.Menu
             gameObject1.transform.rotation = Quaternion.identity;
             gameObject1.transform.localScale = new Vector3(0.05f, 0.1f, 0.085f);
             gameObject1.transform.localPosition = new Vector3(0.56f, -0.35f, 0.17f - offset);
-            gameObject1.AddComponent<Classes.Button>().relatedText = "fav_" + method.buttonText;
+            Classes.Button favBtn = gameObject1.AddComponent<Classes.Button>();
+            favBtn.relatedText = "fav_" + method.buttonText;
+            favBtn.buttonInfo = method;
             gameObject1.GetComponent<Renderer>().material.color = new Color(0.06f, 0.06f, 0.06f);
             if (what3)
             {
@@ -943,12 +947,12 @@ namespace ShibaGTGenesisReborn.Menu
 
                     if (reference != null)
                     {
-                        if (Mouse.current.leftButton.isPressed)
+                        bool isClick = (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) || UnityInput.Current.GetMouseButtonDown(0);
+                        if (isClick)
                         {
-                            Ray ray = TPC.ScreenPointToRay(Mouse.current.position.ReadValue());
-                            RaycastHit hit;
-                            bool worked = Physics.Raycast(ray, out hit, 100);
-                            if (worked)
+                            Vector2 mousePos = Mouse.current != null ? Mouse.current.position.ReadValue() : (Vector2)UnityInput.Current.mousePosition;
+                            Ray ray = TPC.ScreenPointToRay(mousePos);
+                            if (Physics.Raycast(ray, out RaycastHit hit, 100))
                             {
                                 Classes.Button collide = hit.transform.gameObject.GetComponent<Classes.Button>();
                                 if (collide != null)
@@ -957,7 +961,7 @@ namespace ShibaGTGenesisReborn.Menu
                                 }
                             }
                         }
-                        else
+                        else if (Mouse.current == null || !Mouse.current.leftButton.isPressed)
                         {
                             reference.transform.position = new Vector3(999f, -999f, -999f);
                         }
@@ -987,13 +991,17 @@ namespace ShibaGTGenesisReborn.Menu
             colorChanger.Start();
         }
 
-        public static void ToggleFavorite(string buttonText)
+        public static void ToggleFavorite(string buttonText, ButtonInfo target = null)
         {
-            ButtonInfo target = GetIndex(buttonText);
+            if (target == null)
+            {
+                target = GetIndex(buttonText);
+            }
+
             if (target != null)
             {
                 target.isFavorite = !target.isFavorite;
-        
+
                 if (target.isFavorite)
                 {
                     if (!favoriteButtons.Contains(target))
@@ -1008,7 +1016,7 @@ namespace ShibaGTGenesisReborn.Menu
                         favoriteButtons.Remove(target);
                     }
                 }
-        
+
                 UpdateFavoritesCategory();
                 RecreateMenu();
             }
@@ -1037,11 +1045,11 @@ namespace ShibaGTGenesisReborn.Menu
             UpdateFavoritesCategory();
         }
 
-        public static void Toggle(string buttonText)
+        public static void Toggle(string buttonText, ButtonInfo target = null)
         {
             if (buttonText.StartsWith("fav_"))
             {
-                ToggleFavorite(buttonText.Substring(4));
+                ToggleFavorite(buttonText.Substring(4), target);
                 return;
             }
 
@@ -1077,7 +1085,7 @@ namespace ShibaGTGenesisReborn.Menu
                     pageNumber = 0;
                 }
             }
-            else if (buttonText == "disconnect")
+            else if (buttonText.Equals("Disconnect", StringComparison.OrdinalIgnoreCase))
             {
                 PhotonNetwork.Disconnect();
                 NotificationLib.SendNotification(NotificationLib.NotificationType.Info, "Disconnected from network");
@@ -1105,7 +1113,11 @@ namespace ShibaGTGenesisReborn.Menu
             }
             else
             {
-                ButtonInfo target = GetIndex(buttonText);
+                if (target == null)
+                {
+                    target = GetIndex(buttonText);
+                }
+
                 if (target != null)
                 {
                     string displayName = string.IsNullOrEmpty(target.toolTip) ? target.buttonText : target.toolTip;
@@ -1202,11 +1214,42 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static ButtonInfo GetIndex(string buttonText)
         {
-            foreach (ButtonInfo[] buttons in Menu.Buttons.buttons)
+            if (string.IsNullOrEmpty(buttonText))
             {
-                foreach (ButtonInfo button in buttons)
+                return null;
+            }
+
+            if (buttonsType == 999)
+            {
+                foreach (ButtonInfo button in searchResults)
                 {
-                    if (button.buttonText == buttonText)
+                    if (button != null && button.buttonText == buttonText)
+                    {
+                        return button;
+                    }
+                }
+            }
+            else if (buttonsType >= 0 && buttonsType < Buttons.buttons.Length && Buttons.buttons[buttonsType] != null)
+            {
+                foreach (ButtonInfo button in Buttons.buttons[buttonsType])
+                {
+                    if (button != null && button.buttonText == buttonText)
+                    {
+                        return button;
+                    }
+                }
+            }
+
+            foreach (ButtonInfo[] buttonList in Buttons.buttons)
+            {
+                if (buttonList == null)
+                {
+                    continue;
+                }
+
+                foreach (ButtonInfo button in buttonList)
+                {
+                    if (button != null && button.buttonText == buttonText)
                     {
                         return button;
                     }

@@ -1,4 +1,4 @@
-﻿using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Classes;
 using System.Collections.Generic;
 using ShibaGTGenesisReborn.Libs;
 using static ShibaGTGenesisReborn.Menu.Main;
@@ -25,22 +25,24 @@ namespace ShibaGTGenesisReborn.Menu
             buttonsType = 1;
             pageNumber = 0;
         }
+
         public static void master()
         {
             buttonsType = 9;
             pageNumber = 0;
         }
+
         public static void room()
         {
             buttonsType = 10;
             pageNumber = 0;
         }
+
         public static void moveset()
         {
             buttonsType = 11;
             pageNumber = 0;
         }
-
 
         public static void projset()
         {
@@ -171,10 +173,9 @@ namespace ShibaGTGenesisReborn.Menu
         public static void UpdateEnabledMods()
         {
             List<ButtonInfo> enabledMods = new List<ButtonInfo>();
-
             for (int i = 0; i < Buttons.buttons.Length; i++)
             {
-                if (i == 14)
+                if (i == 14 || i == 15)
                     continue;
 
                 foreach (ButtonInfo mod in Buttons.buttons[i])
@@ -185,7 +186,6 @@ namespace ShibaGTGenesisReborn.Menu
                     }
                 }
             }
-
             Buttons.buttons[14] = enabledMods.ToArray();
         }
     }
