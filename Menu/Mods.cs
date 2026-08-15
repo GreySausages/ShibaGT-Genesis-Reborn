@@ -343,6 +343,7 @@ namespace ShibaGTGenesisReborn.Menu
                     var child = forest.transform.GetChild(i).gameObject;
                     if (!child.name.Contains(_leavesName))
                         continue;
+
                     child.SetActive(false);
                     leaves.Add(child);
                 }
@@ -356,10 +357,7 @@ namespace ShibaGTGenesisReborn.Menu
             leaves.Clear();
         }
 
-        public static void FPS(int aa)
-        {
-            Application.targetFrameRate = aa;
-        }
+        public static void FPS(int aa) => Application.targetFrameRate = aa;
 
         public static void NoTagFreeze()
         {
@@ -369,7 +367,6 @@ namespace ShibaGTGenesisReborn.Menu
         }
 
         private static float tagAuraCooldown;
-
         public static void TagAura(float radius = 3.5f)
         {
             if (!NetworkSystem.Instance.InRoom || VRRig.LocalRig == null) return;
