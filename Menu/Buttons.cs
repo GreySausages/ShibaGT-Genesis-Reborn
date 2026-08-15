@@ -72,13 +72,15 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Legit Slide Control", method =() => mods.SlideControl(0.05f), disableMethod =() => mods.SlideControl(0.00425f), isTogglable = true, toolTip = "Slightly more slide control"},
                 new ButtonInfo { buttonText = "Blatant Slide Control", method =() => mods.SlideControl(0.08f), disableMethod =() => mods.SlideControl(0.00425f), isTogglable = true, toolTip = "High slide control"},
                 new ButtonInfo { buttonText = "Grappling Hook", method =() => mods.GrapplingHook(), disableMethod =() => mods.GrapplingHookDisable(), isTogglable = true, toolTip = "Aim and pull with grappling hook"},
-                new ButtonInfo { buttonText = "Air Swim", method =() => mods.AirSwim(true), disableMethod =() => mods.AirSwim(false), isTogglable = true, toolTip = "Swim through the air"},
-                new ButtonInfo { buttonText = "Jesus Monke", method =() => mods.JesusMonke(), isTogglable = true, toolTip = "Walk and slide on water surfaces"},
+                new ButtonInfo { buttonText = "Air Swim", method =() => mods.AirSwim(), disableMethod =() => mods.AirSwimDisable(), isTogglable = true, toolTip = "Swim through the air"},
+                new ButtonInfo { buttonText = "Jesus Monke", method =() => mods.JesusMonke(), disableMethod =() => mods.JesusMonkeDisable(), isTogglable = true, toolTip = "Walk and slide on water surfaces"},
                 new ButtonInfo { buttonText = "Zipline Speed", method =() => mods.ZiplineSpeed(35f), disableMethod =() => mods.ZiplineSpeed(10f), isTogglable = true, toolTip = "Increase zipline speed"},
                 new ButtonInfo { buttonText = "Catapult", method =() => mods.Catapult(), isTogglable = true, toolTip = "Shoot pointer to launch yourself"},
                 new ButtonInfo { buttonText = "Sticky Hands", method =() => mods.StickyHands(), disableMethod =() => mods.ResetStickyHands(), isTogglable = true, toolTip = "Hold grip on surfaces to stick"},
                 new ButtonInfo { buttonText = "PiggyBack", method =() => mods.PiggyBack(), disableMethod =() => mods.PiggyBackDisable(), isTogglable = true, toolTip = "Ride on another player's back"},
                 new ButtonInfo { buttonText = "Follow Player", method =() => mods.FollowPlayer(), disableMethod =() => mods.FollowPlayerDisable(), isTogglable = true, toolTip = "Always follow slightly behind a player"},
+                new ButtonInfo { buttonText = "Ender Pearl", method =() => mods.EnderPearl(), disableMethod =() => mods.EnderPearlDisable(), isTogglable = true, toolTip = "Grip to hold pearl, release to throw and teleport"},
+                new ButtonInfo { buttonText = "Zipline Gun", method =() => mods.ZiplineGun(), disableMethod =() => mods.ZiplineGunDisable(), isTogglable = true, toolTip = "Shoot to create rideable zipline"},
             },
 
             new ButtonInfo[]

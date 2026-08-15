@@ -41,7 +41,7 @@ namespace ShibaGTGenesisReborn.Mods
         private static float originalFovMain = -1f;
         private static float originalFovCurrent = -1f;
 
-        static string Dir => Application.persistentDataPath;
+        static string Dir => ModsLib.GenesisDirectory;
         static string P_Obj => Path.Combine(Dir, "vape.obj");
         static string P_Tex => Path.Combine(Dir, "vape.png");
 

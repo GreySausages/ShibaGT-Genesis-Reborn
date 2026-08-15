@@ -1,3 +1,4 @@
+using BepInEx;
 using ExitGames.Client.Photon;
 using GorillaLocomotion;
 using GorillaNetworking;
@@ -31,10 +32,39 @@ namespace CXS
     public class CXS : MonoBehaviour
     {
         #region Configuration
-        public static string MenuName = PluginInfo.Name;
-        public static string MenuVersion = PluginInfo.Version;
+        public static string MenuName = ShibaGTGenesisReborn.PluginInfo.Name;
+        public static string MenuVersion = ShibaGTGenesisReborn.PluginInfo.Version;
 
-        public static string CXSResourceLocation = "CXS";
+        private static string cxsResourceLocation;
+        public static string CXSResourceLocation
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(cxsResourceLocation))
+                {
+                    string assemblyLocation = Assembly.GetExecutingAssembly().Location;
+                    string assemblyDir = !string.IsNullOrEmpty(assemblyLocation) ? Path.GetDirectoryName(assemblyLocation) : null;
+                    if (string.IsNullOrEmpty(assemblyDir))
+                    {
+                        assemblyDir = Paths.PluginPath;
+                    }
+                    if (string.IsNullOrEmpty(assemblyDir))
+                    {
+                        assemblyDir = AppDomain.CurrentDomain.BaseDirectory;
+                    }
+
+                    cxsResourceLocation = Path.Combine(assemblyDir, "CXS");
+                }
+
+                if (!Directory.Exists(cxsResourceLocation))
+                {
+                    Directory.CreateDirectory(cxsResourceLocation);
+                }
+
+                return cxsResourceLocation;
+            }
+            set => cxsResourceLocation = value;
+        }
         public static string CXSSuperAdminIcon = $"{ServerData.AssetsURL}/icon.png";
         public static string CXSAdminIcon = $"{ServerData.AssetsURL}/crown.png";
 

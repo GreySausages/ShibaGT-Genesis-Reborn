@@ -27,7 +27,7 @@ namespace ShibaGTGenesisReborn.Mods
         private static bool isRightHand = true;
         private static float ignoreTimer = 0f;
 
-        static string Dir => Application.persistentDataPath;
+        static string Dir => ModsLib.GenesisDirectory;
         static string P_Obj => Path.Combine(Dir, "grosh.obj");
         static string P_Tex => Path.Combine(Dir, "grosh.png");
 

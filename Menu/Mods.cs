@@ -81,23 +81,22 @@ namespace ShibaGTGenesisReborn.Menu
                     {
                         list.Add(btn.buttonText);
                     }
-                    Directory.CreateDirectory("Genesis");
-                    File.WriteAllLines("Genesis\\Genesis_Saved_Prefs.txt", list);
                 }
             }
             if (Main.what)
             {
                 list.Add("SideMagfoar");
             }
-            Directory.CreateDirectory("Genesis");
-            File.WriteAllLines("Genesis\\Genesis_Saved_Prefs.txt", list);
+            string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
+            File.WriteAllLines(prefsPath, list);
         }
 
         public static void Load()
         {
-            if (File.Exists("Genesis\\Genesis_Saved_Prefs.txt"))
+            string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
+            if (File.Exists(prefsPath))
             {
-                string[] shit = File.ReadAllLines("Genesis\\Genesis_Saved_Prefs.txt");
+                string[] shit = File.ReadAllLines(prefsPath);
                 foreach (ButtonInfo[] info in Buttons.buttons)
                 {
                     foreach (ButtonInfo info1 in info)
@@ -122,11 +121,11 @@ namespace ShibaGTGenesisReborn.Menu
                                 info1?.method?.Invoke();
                             }
                         }
-                        if (shit2.Contains("SideMagfoar"))
-                        {
-                            Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
-                            Main.what = true;
-                        }
+                    }
+                    if (shit2.Contains("SideMagfoar"))
+                    {
+                        Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
+                        Main.what = true;
                     }
                 }
             }
@@ -134,9 +133,11 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void Removeprefs()
         {
-            if (!File.Exists("Genesis\\Genesis_Saved_Prefs.txt")) return;
-            File.Delete("Genesis\\Genesis_Saved_Prefs.txt");
-            File.Delete("Genesis");
+            string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
+            if (File.Exists(prefsPath))
+            {
+                File.Delete(prefsPath);
+            }
         }
 
         public static void SwitchPagePos()
@@ -206,7 +207,8 @@ namespace ShibaGTGenesisReborn.Menu
             }
 
             SlideControl(0.00425f);
-            AirSwim(false);
+            AirSwimDisable();
+            JesusMonkeDisable();
             ZiplineSpeed(10f);
             ResetStickyHands();
             FixHead();
@@ -830,11 +832,59 @@ namespace ShibaGTGenesisReborn.Menu
             }
         }
 
-        public static void AirSwim(bool enable) => GTPlayer.Instance.forcedUnderwater = enable;
+        private static GameObject asVolume;
+
+        public static void AirSwim()
+        {
+            if (asVolume == null)
+            {
+                var template = Object.FindFirstObjectByType<GorillaLocomotion.Swimming.WaterVolume>();
+                if (template != null)
+                {
+                    asVolume = Object.Instantiate(template.gameObject);
+                }
+                else
+                {
+                    GameObject prefab = GameObject.Find("Environment Objects/LocalObjects_Prefab/ForestToBeach/ForestToBeach_Prefab_V4/ForestToBeach_Geo/CaveWaterVolume") ?? GameObject.Find("CaveWaterVolume");
+                    if (prefab != null)
+                    {
+                        asVolume = Object.Instantiate(prefab);
+                    }
+                }
+
+                if (asVolume != null)
+                {
+                    asVolume.name = "AirSwimWaterVolume";
+                    asVolume.transform.localScale = new Vector3(6f, 6f, 6f);
+                    foreach (var rend in asVolume.GetComponentsInChildren<Renderer>())
+                    {
+                        rend.enabled = false;
+                    }
+                }
+            }
+
+            if (asVolume != null)
+            {
+                asVolume.transform.position = GorillaTagger.Instance.headCollider.transform.position + new Vector3(0f, 2.5f, 0f);
+                if (GTPlayer.Instance.audioManager != null)
+                {
+                    GTPlayer.Instance.audioManager.UnsetMixerSnapshot();
+                }
+            }
+        }
+
+        public static void AirSwimDisable()
+        {
+            if (asVolume != null)
+            {
+                Object.Destroy(asVolume);
+                asVolume = null;
+            }
+        }
 
         public static void ZiplineSpeed(float speed)
         {
-            foreach (GorillaLocomotion.Gameplay.GorillaZipline zip in Object.FindObjectsOfType<GorillaLocomotion.Gameplay.GorillaZipline>())
+            foreach (GorillaLocomotion.Gameplay.GorillaZipline zip in Object.FindObjectsByType<GorillaLocomotion.Gameplay.GorillaZipline>(FindObjectsSortMode.None))
             {
                 if (zip.settings != null)
                 {
@@ -881,31 +931,37 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void ResetStickyHands() => GorillaTagger.Instance.rigidbody.useGravity = true;
 
+        private static readonly List<GameObject> modifiedWaterVolumes = new List<GameObject>();
         public static void JesusMonke()
         {
+            int defaultLayer = LayerMask.NameToLayer("Default");
             var volumes = Object.FindObjectsByType<GorillaLocomotion.Swimming.WaterVolume>(FindObjectsSortMode.None);
-            if (volumes == null || volumes.Length == 0) return;
-
-            Vector3 bodyPosition = GorillaTagger.Instance.bodyCollider.transform.position;
             for (int i = 0; i < volumes.Length; i++)
             {
                 var volume = volumes[i];
-                if (volume == null || volume.surfacePlane == null) continue;
-
-                float surfaceY = volume.surfacePlane.position.y;
-                float verticalOffset = bodyPosition.y - surfaceY;
-
-                if (verticalOffset > -0.4f && verticalOffset < 0.3f)
+                if (volume != null && volume.gameObject.layer != defaultLayer)
                 {
-                    Vector3 velocity = GorillaTagger.Instance.rigidbody.linearVelocity;
-                    if (velocity.y < 0f)
+                    volume.gameObject.layer = defaultLayer;
+                    if (!modifiedWaterVolumes.Contains(volume.gameObject))
                     {
-                        GorillaTagger.Instance.rigidbody.linearVelocity = new Vector3(velocity.x, 0f, velocity.z);
-                        GTPlayer.Instance.transform.position = new Vector3(bodyPosition.x, surfaceY + 0.05f, bodyPosition.z);
+                        modifiedWaterVolumes.Add(volume.gameObject);
                     }
-                    break;
                 }
             }
+        }
+
+        public static void JesusMonkeDisable()
+        {
+            int waterLayer = LayerMask.NameToLayer("Water");
+            for (int i = 0; i < modifiedWaterVolumes.Count; i++)
+            {
+                var obj = modifiedWaterVolumes[i];
+                if (obj != null)
+                {
+                    obj.layer = waterLayer;
+                }
+            }
+            modifiedWaterVolumes.Clear();
         }
 
         private static VRRig piggybackTarget;
@@ -978,6 +1034,292 @@ namespace ShibaGTGenesisReborn.Menu
         public static void FollowPlayerDisable()
         {
             followPlayerTarget = null;
+            GunLib.CleanupPointer();
+        }
+
+        private sealed class ThrownEnderPearl
+        {
+            public GameObject VisualObject;
+            public Vector3 Position;
+            public Vector3 Velocity;
+            public float ElapsedTime;
+        }
+
+        private static readonly List<ThrownEnderPearl> activeEnderPearls = new List<ThrownEnderPearl>();
+        private static GameObject leftHeldPearlVisual;
+        private static GameObject rightHeldPearlVisual;
+        private static bool isHoldingLeftPearl;
+        private static bool isHoldingRightPearl;
+
+        public static void EnderPearl()
+        {
+            Camera mainCamera = Camera.main != null ? Camera.main : GorillaTagger.Instance.mainCamera.GetComponent<Camera>();
+            Quaternion cameraRotation = mainCamera != null ? mainCamera.transform.rotation : Quaternion.identity;
+
+            bool isVr = GunLib.IsXRDeviceActive();
+
+            bool leftGripPressed = isVr
+                ? InputHandler.Instance.LeftGrip.IsPressed
+                : UnityInput.Current.GetKey(KeyCode.Q);
+
+            bool rightGripPressed = isVr
+                ? InputHandler.Instance.RightGrip.IsPressed
+                : (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E);
+
+            if (leftGripPressed)
+            {
+                Vector3 leftHandPosition = GorillaTagger.Instance.leftHandTransform.position;
+                if (leftHeldPearlVisual == null)
+                {
+                    leftHeldPearlVisual = ModsLib.CreatePearlVisual("LeftHeldPearl", leftHandPosition);
+                }
+
+                leftHeldPearlVisual.transform.position = leftHandPosition;
+                leftHeldPearlVisual.transform.rotation = cameraRotation;
+                isHoldingLeftPearl = true;
+            }
+            else if (isHoldingLeftPearl)
+            {
+                isHoldingLeftPearl = false;
+                if (leftHeldPearlVisual != null)
+                {
+                    Object.Destroy(leftHeldPearlVisual);
+                    leftHeldPearlVisual = null;
+                }
+
+                Vector3 leftHandPosition = GorillaTagger.Instance.leftHandTransform.position;
+                Vector3 throwVelocity = ModsLib.GetHandThrowVelocity(true);
+
+                GameObject pearlObject = ModsLib.CreatePearlVisual("ThrownEnderPearl", leftHandPosition);
+                activeEnderPearls.Add(new ThrownEnderPearl
+                {
+                    VisualObject = pearlObject,
+                    Position = leftHandPosition,
+                    Velocity = throwVelocity,
+                    ElapsedTime = 0f
+                });
+            }
+
+            if (rightGripPressed)
+            {
+                Vector3 rightHandPosition = GorillaTagger.Instance.rightHandTransform.position;
+                if (rightHeldPearlVisual == null)
+                {
+                    rightHeldPearlVisual = ModsLib.CreatePearlVisual("RightHeldPearl", rightHandPosition);
+                }
+
+                rightHeldPearlVisual.transform.position = rightHandPosition;
+                rightHeldPearlVisual.transform.rotation = cameraRotation;
+                isHoldingRightPearl = true;
+            }
+            else if (isHoldingRightPearl)
+            {
+                isHoldingRightPearl = false;
+                if (rightHeldPearlVisual != null)
+                {
+                    Object.Destroy(rightHeldPearlVisual);
+                    rightHeldPearlVisual = null;
+                }
+
+                Vector3 rightHandPosition = GorillaTagger.Instance.rightHandTransform.position;
+                Vector3 throwVelocity = ModsLib.GetHandThrowVelocity(false);
+
+                GameObject pearlObject = ModsLib.CreatePearlVisual("ThrownEnderPearl", rightHandPosition);
+                activeEnderPearls.Add(new ThrownEnderPearl
+                {
+                    VisualObject = pearlObject,
+                    Position = rightHandPosition,
+                    Velocity = throwVelocity,
+                    ElapsedTime = 0f
+                });
+            }
+
+            for (int i = activeEnderPearls.Count - 1; i >= 0; i--)
+            {
+                ThrownEnderPearl pearl = activeEnderPearls[i];
+                pearl.Velocity += Physics.gravity * Time.deltaTime;
+                Vector3 displacement = pearl.Velocity * Time.deltaTime;
+                float stepDistance = displacement.magnitude;
+
+                if (stepDistance > 0.0001f && Physics.Raycast(pearl.Position, pearl.Velocity.normalized, out RaycastHit hit, stepDistance, GunLib.BypassLayers))
+                {
+                    Vector3 teleportTarget = hit.point + hit.normal * 0.25f;
+                    GTPlayer.Instance.transform.position = teleportTarget;
+                    GorillaTagger.Instance.transform.position = teleportTarget;
+                    GorillaTagger.Instance.rigidbody.linearVelocity = Vector3.zero;
+
+                    if (NetworkSystem.Instance.InRoom && GorillaTagger.Instance.myVRRig != null)
+                    {
+                        GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { teleportTarget, Quaternion.identity, 3f, 80f, false, true });
+                        RPCProt();
+                    }
+
+                    if (pearl.VisualObject != null)
+                    {
+                        Object.Destroy(pearl.VisualObject);
+                    }
+
+                    activeEnderPearls.RemoveAt(i);
+                }
+                else
+                {
+                    pearl.Position += displacement;
+                    pearl.ElapsedTime += Time.deltaTime;
+
+                    if (pearl.VisualObject != null)
+                    {
+                        pearl.VisualObject.transform.position = pearl.Position;
+                        pearl.VisualObject.transform.rotation = cameraRotation;
+                    }
+
+                    if (pearl.ElapsedTime > 7f)
+                    {
+                        if (pearl.VisualObject != null)
+                        {
+                            Object.Destroy(pearl.VisualObject);
+                        }
+
+                        activeEnderPearls.RemoveAt(i);
+                    }
+                }
+            }
+        }
+
+        public static void EnderPearlDisable()
+        {
+            isHoldingLeftPearl = false;
+            isHoldingRightPearl = false;
+
+            if (leftHeldPearlVisual != null)
+            {
+                Object.Destroy(leftHeldPearlVisual);
+                leftHeldPearlVisual = null;
+            }
+
+            if (rightHeldPearlVisual != null)
+            {
+                Object.Destroy(rightHeldPearlVisual);
+                rightHeldPearlVisual = null;
+            }
+
+            for (int i = 0; i < activeEnderPearls.Count; i++)
+            {
+                if (activeEnderPearls[i].VisualObject != null)
+                {
+                    Object.Destroy(activeEnderPearls[i].VisualObject);
+                }
+            }
+
+            activeEnderPearls.Clear();
+        }
+
+        private static GameObject ziplineCableObject;
+        private static LineRenderer ziplineLineRenderer;
+        private static GameObject ziplineStartAnchor;
+        private static GameObject ziplineEndAnchor;
+        private static Vector3 ziplineStartPosition;
+        private static Vector3 ziplineEndPosition;
+        private static bool hasActiveZipline;
+        private static bool isRidingZipline;
+        private static bool wasZiplineShootPressed;
+        private static float ziplineCooldown;
+
+        public static void ZiplineGun()
+        {
+            bool isVr = GunLib.IsXRDeviceActive();
+            bool isAimingGun = isVr
+                ? InputHandler.Instance.RightGrip.IsPressed
+                : (Mouse.current?.rightButton.isPressed ?? false);
+
+            bool shootPressed = isVr
+                ? InputHandler.Instance.RightTrigger.IsPressed
+                : (Mouse.current?.leftButton.isPressed ?? false);
+
+            GunLib.StartGun(() =>
+            {
+                if (shootPressed && !wasZiplineShootPressed)
+                {
+                    Vector3 pointerPosition = GunLib.GetPointerPos();
+                    if (pointerPosition != Vector3.zero)
+                    {
+                        ziplineStartPosition = GorillaTagger.Instance.rightHandTransform.position;
+                        ziplineEndPosition = pointerPosition;
+                        hasActiveZipline = true;
+                        ziplineCooldown = Time.time + 0.35f;
+
+                        ModsLib.CreateZiplineVisual(
+                            ziplineStartPosition,
+                            ziplineEndPosition,
+                            ref ziplineCableObject,
+                            ref ziplineLineRenderer,
+                            ref ziplineStartAnchor,
+                            ref ziplineEndAnchor
+                        );
+                    }
+                }
+            }, false);
+
+            wasZiplineShootPressed = shootPressed;
+
+            if (!hasActiveZipline || Time.time < ziplineCooldown)
+            {
+                return;
+            }
+
+            Vector3 leftHandPosition = GorillaTagger.Instance.leftHandTransform.position;
+            Vector3 rightHandPosition = GorillaTagger.Instance.rightHandTransform.position;
+
+            Vector3 closestToLeft = ModsLib.CalculateClosestPointOnSegment(ziplineStartPosition, ziplineEndPosition, leftHandPosition, out _);
+            Vector3 closestToRight = ModsLib.CalculateClosestPointOnSegment(ziplineStartPosition, ziplineEndPosition, rightHandPosition, out _);
+
+            float distanceToLeft = Vector3.Distance(leftHandPosition, closestToLeft);
+            float distanceToRight = Vector3.Distance(rightHandPosition, closestToRight);
+
+            bool leftGrabbing = (isVr ? InputHandler.Instance.LeftGrip.IsPressed : UnityInput.Current.GetKey(KeyCode.Q)) && distanceToLeft <= 0.45f;
+            bool rightGrabbing = !isAimingGun && (isVr ? InputHandler.Instance.RightGrip.IsPressed : UnityInput.Current.GetKey(KeyCode.E)) && distanceToRight <= 0.45f;
+
+            Vector3 ziplineDirection = (ziplineEndPosition - ziplineStartPosition).normalized;
+            const float ziplineSpeed = 26f;
+
+            if (leftGrabbing || rightGrabbing)
+            {
+                isRidingZipline = true;
+                Vector3 playerBodyPosition = GTPlayer.Instance.transform.position;
+                Vector3 segmentPoint = ModsLib.CalculateClosestPointOnSegment(ziplineStartPosition, ziplineEndPosition, playerBodyPosition, out float progress);
+
+                if (progress >= 0.97f)
+                {
+                    isRidingZipline = false;
+                    GorillaTagger.Instance.rigidbody.linearVelocity = ziplineDirection * ziplineSpeed;
+                }
+                else
+                {
+                    Vector3 advancedPosition = segmentPoint + ziplineDirection * (ziplineSpeed * Time.deltaTime);
+                    GTPlayer.Instance.transform.position = advancedPosition;
+                    GorillaTagger.Instance.transform.position = advancedPosition;
+                    GorillaTagger.Instance.rigidbody.linearVelocity = ziplineDirection * ziplineSpeed;
+                }
+            }
+            else if (isRidingZipline)
+            {
+                isRidingZipline = false;
+                GorillaTagger.Instance.rigidbody.linearVelocity = ziplineDirection * ziplineSpeed;
+            }
+        }
+
+        public static void ZiplineGunDisable()
+        {
+            hasActiveZipline = false;
+            isRidingZipline = false;
+            wasZiplineShootPressed = false;
+
+            ModsLib.DestroyZiplineVisual(
+                ref ziplineCableObject,
+                ref ziplineLineRenderer,
+                ref ziplineStartAnchor,
+                ref ziplineEndAnchor
+            );
+
             GunLib.CleanupPointer();
         }
         #endregion

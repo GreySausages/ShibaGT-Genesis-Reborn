@@ -25,7 +25,7 @@ namespace ShibaGTGenesisReborn.Mods
         const float SpawnInterval = 0.08f;
         const float BaseScale = 2f;
 
-        static string Dir => Application.persistentDataPath;
+        static string Dir => ModsLib.GenesisDirectory;
         static string P_Obj => Path.Combine(Dir, "fatseal.obj");
         static string P_Tex => Path.Combine(Dir, "fatseal.png");
 

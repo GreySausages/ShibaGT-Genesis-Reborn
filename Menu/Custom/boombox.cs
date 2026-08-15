@@ -46,7 +46,7 @@ namespace ShibaGTGenesisReborn.Mods
         private static readonly Queue<Action> ThreadQueue = new Queue<Action>();
         private static float[] samples = new float[256];
 
-        static string Dir => Application.persistentDataPath;
+        static string Dir => ModsLib.GenesisDirectory;
         static string P_Obj => Path.Combine(Dir, "boombox.obj");
         static string P_Tex => Path.Combine(Dir, "boombox.png");
         public static string P_Aud => Path.Combine(Dir, "boombox_audio.wav");
