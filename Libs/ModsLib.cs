@@ -44,7 +44,6 @@ namespace ShibaGTGenesisReborn.Libs
             }
         }
         #endregion
-
         #region Ender Pearl Utilities
         private static Texture2D enderPearlTexture;
         private static Material enderPearlMaterial;
