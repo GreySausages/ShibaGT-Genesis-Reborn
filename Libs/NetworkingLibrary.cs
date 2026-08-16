@@ -6,6 +6,7 @@ using ExitGames.Client.Photon;
 using GorillaLocomotion;
 using Photon.Pun;
 using Photon.Realtime;
+using ShibaGTGenesisReborn.Mods.Custom;
 using UnityEngine;
 using UnityEngine.Networking;
 
@@ -137,7 +138,7 @@ namespace ShibaGTGenesisReborn.Libs
                 
                 if (kvp.Value.gameObject.name.Contains("Vape"))
                 {
-                    bool isSmoking = ShibaGTGenesisReborn.Mods.Vape.isExhaling;
+                    bool isSmoking = Vape.isExhaling;
                     if (isSmoking != kvp.Value.isVapeSmoking)
                     {
                         kvp.Value.isVapeSmoking = isSmoking;
@@ -337,7 +338,7 @@ namespace ShibaGTGenesisReborn.Libs
             {
                 if (isSmoking)
                 {
-                    ShibaGTGenesisReborn.Mods.Vape.TriggerExhale();
+                    Vape.TriggerExhale();
                 }
             }
         }
@@ -353,7 +354,7 @@ namespace ShibaGTGenesisReborn.Libs
             GameObject obj = FindTrackedObject(objectId);
             if (obj != null && obj.name.Contains("Boombox"))
             {
-                ShibaGTGenesisReborn.Mods.BoomboxManager.VisualizerIntensity = intensity;
+                BoomboxManager.VisualizerIntensity = intensity;
             }
         }
 
@@ -426,7 +427,7 @@ namespace ShibaGTGenesisReborn.Libs
                 
                 if (kvp.Value.gameObject.name.Contains("Vape"))
                 {
-                    SendEvent(VapeSmokeEvent, sender.ActorNumber, kvp.Key, ShibaGTGenesisReborn.Mods.Vape.isExhaling);
+                    SendEvent(VapeSmokeEvent, sender.ActorNumber, kvp.Key, Vape.isExhaling);
                 }
             }
         }
@@ -506,7 +507,7 @@ namespace ShibaGTGenesisReborn.Libs
                 AudioSource aud = obj.GetComponent<AudioSource>();
                 if (aud != null && aud.clip != null)
                 {
-                    string clipUrl = ShibaGTGenesisReborn.Mods.BoomboxManager.P_Aud;
+                    string clipUrl = BoomboxManager.P_Aud;
                     if (!string.IsNullOrEmpty(clipUrl))
                         SendEvent(AudioClipEvent, ReceiverGroup.Others, objectId, clipUrl);
                 }
@@ -744,25 +745,25 @@ namespace ShibaGTGenesisReborn.Libs
 
         private GameObject FindObjectInMods(string objectId)
         {
-            if (ShibaGTGenesisReborn.Mods.BoomboxManager.Obj != null && 
-                ShibaGTGenesisReborn.Mods.BoomboxManager.Obj.GetInstanceID().ToString() == objectId)
-                return ShibaGTGenesisReborn.Mods.BoomboxManager.Obj;
+            if (BoomboxManager.Obj != null &&
+                BoomboxManager.Obj.GetInstanceID().ToString() == objectId)
+                return BoomboxManager.Obj;
             
-            if (ShibaGTGenesisReborn.Mods.GroshHolder.Obj != null && 
-                ShibaGTGenesisReborn.Mods.GroshHolder.Obj.GetInstanceID().ToString() == objectId)
-                return ShibaGTGenesisReborn.Mods.GroshHolder.Obj;
+            if (GroshHolder.Obj != null &&
+                GroshHolder.Obj.GetInstanceID().ToString() == objectId)
+                return GroshHolder.Obj;
             
-            if (ShibaGTGenesisReborn.Mods.Vape.Obj != null && 
-                ShibaGTGenesisReborn.Mods.Vape.Obj.GetInstanceID().ToString() == objectId)
-                return ShibaGTGenesisReborn.Mods.Vape.Obj;
+            if (Vape.Obj != null && 
+                Vape.Obj.GetInstanceID().ToString() == objectId)
+                return Vape.Obj;
             
-            if (ShibaGTGenesisReborn.Mods.SusTung.Obj != null && 
-                ShibaGTGenesisReborn.Mods.SusTung.Obj.GetInstanceID().ToString() == objectId)
-                return ShibaGTGenesisReborn.Mods.SusTung.Obj;
+            if (SusTung.Obj != null &&
+                SusTung.Obj.GetInstanceID().ToString() == objectId)
+                return SusTung.Obj;
             
-            if (ShibaGTGenesisReborn.Mods.FatSealSpammer.Seals != null)
+            if (FatSealSpammer.Seals != null)
             {
-                foreach (GameObject seal in ShibaGTGenesisReborn.Mods.FatSealSpammer.Seals)
+                foreach (GameObject seal in FatSealSpammer.Seals)
                 {
                     if (seal != null && seal.GetInstanceID().ToString() == objectId)
                         return seal;

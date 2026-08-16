@@ -25,55 +25,10 @@ namespace ShibaGTGenesisReborn.Patches
         }
     }
 
-    [HarmonyPatch(typeof(MonkeAgent), "CloseInvalidRoom")]
-    public class NoCloseInvalidRoom : MonoBehaviour
-    {
-        private static bool Prefix()
-        {
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MonkeAgent), "CheckReports")]
-    public class NoCheckReports : MonoBehaviour
-    {
-        private static bool Prefix()
-        {
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MonkeAgent), "QuitDelay", MethodType.Enumerator)]
-    public class NoQuitDelay : MonoBehaviour
-    {
-        private static bool Prefix()
-        {
-            return false;
-        }
-    }
-
     [HarmonyPatch(typeof(MonkeAgent), "IncrementRPCCallLocal")]
     public class NoIncrementRPCCallLocal : MonoBehaviour
     {
         private static bool Prefix(PhotonMessageInfoWrapped infoWrapped, string rpcFunction)
-        {
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MonkeAgent), "GetRPCCallTracker")]
-    internal class NoGetRPCCallTracker : MonoBehaviour
-    {
-        private static bool Prefix()
-        {
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MonkeAgent), "DispatchReport")]
-    public class NoDispatchReport : MonoBehaviour
-    {
-        private static bool Prefix()
         {
             return false;
         }

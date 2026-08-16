@@ -22,9 +22,10 @@ namespace ShibaGTGenesisReborn
         public GameObject ComponentHolder { get; private set; }
 
         private Harmony harmony;
-
         private bool versionOkay;
         private bool initialized;
+        private bool isRunning = true;
+        private Coroutine versionLoopCoroutine;
 
         [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
         public class PatchOnAwake : Attribute { }
@@ -84,30 +85,47 @@ namespace ShibaGTGenesisReborn
 
         private void OnPlayerSpawned()
         {
-            if (initialized)
+            if (initialized || !isRunning)
                 return;
 
             initialized = true;
-            
-            if (ComponentHolder.GetComponent<InputHandler>() == null)
+
+            if (ComponentHolder != null && ComponentHolder.GetComponent<InputHandler>() == null)
                 ComponentHolder.AddComponent<InputHandler>();
 
-            StartCoroutine(WaitForVersionThenStartLoop());
+            versionLoopCoroutine = StartCoroutine(WaitForVersionThenStartLoop());
         }
 
         private void OnDestroy()
         {
-            GorillaTagger.OnPlayerSpawned(OnPlayerSpawned);
+            isRunning = false;
+
+            if (versionLoopCoroutine != null)
+            {
+                StopCoroutine(versionLoopCoroutine);
+                versionLoopCoroutine = null;
+            }
+
+            StopAllCoroutines();
 
             harmony?.UnpatchSelf();
+
+            if (ComponentHolder != null)
+            {
+                Destroy(ComponentHolder);
+                ComponentHolder = null;
+            }
+
+            Instance = null;
         }
 
         private IEnumerator WaitForVersionThenStartLoop()
         {
-            while (!versionOkay)
+            while (!versionOkay && isRunning)
                 yield return null;
 
-            StartCoroutine(VersionLoop());
+            if (isRunning)
+                versionLoopCoroutine = StartCoroutine(VersionLoop());
         }
 
         private IEnumerator StartVersionCheck()
@@ -117,9 +135,12 @@ namespace ShibaGTGenesisReborn
 
         private IEnumerator VersionLoop()
         {
-            while (true)
+            while (isRunning)
             {
                 yield return new WaitForSeconds(300f);
+
+                if (!isRunning)
+                    yield break;
 
                 yield return CheckVersion(false);
             }
@@ -129,81 +150,88 @@ namespace ShibaGTGenesisReborn
         {
             string rawUrl = "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/PluginInfo.cs";
 
-            using UnityWebRequest request = UnityWebRequest.Get(rawUrl);
+            UnityWebRequest request = UnityWebRequest.Get(rawUrl);
 
-            yield return request.SendWebRequest();
-
-            if (request.result != UnityWebRequest.Result.Success)
+            try
             {
-                if (startup)
+                yield return request.SendWebRequest();
+
+                if (request.result != UnityWebRequest.Result.Success)
                 {
-                    NotificationLib.SendNotification(
-                        NotificationLib.NotificationType.Error,
-                        "Unable to connect to update servers."
-                    );
+                    if (startup)
+                    {
+                        NotificationLib.SendNotification(
+                            NotificationLib.NotificationType.Error,
+                            "Unable to connect to update servers."
+                        );
+                    }
+
+                    versionOkay = true;
+                    yield break;
                 }
 
-                versionOkay = true;
-                yield break;
+                string content = request.downloadHandler.text;
+
+                Match versionMatch = Regex.Match(content, @"Version\s*=\s*""([^""]+)""");
+
+                if (!versionMatch.Success)
+                {
+                    if (startup)
+                    {
+                        NotificationLib.SendNotification(
+                            NotificationLib.NotificationType.Error,
+                            "Failed to parse version information."
+                        );
+                    }
+
+                    versionOkay = true;
+                    yield break;
+                }
+
+                string githubVersion = versionMatch.Groups[1].Value;
+                Version local = new Version(PluginInfo.Version);
+                Version remote = new Version(githubVersion);
+
+                if (remote > local)
+                {
+                    if (startup)
+                    {
+                        NotificationLib.SendNotification(
+                            NotificationLib.NotificationType.Alert,
+                            $"Update available!\nLatest: {remote}\nCurrent: {local}\nDownload: github.com/GreySausages/ShibaGT-Genesis-Reborn"
+                        );
+                    }
+
+                    versionOkay = true;
+                }
+                else if (remote == local)
+                {
+                    if (startup)
+                    {
+                        NotificationLib.SendNotification(
+                            NotificationLib.NotificationType.Info,
+                            $"{PluginInfo.Name} is up to date! (v{local})"
+                        );
+                    }
+
+                    versionOkay = true;
+                }
+                else
+                {
+                    if (startup)
+                    {
+                        NotificationLib.SendNotification(
+                            NotificationLib.NotificationType.Error,
+                            $"Modified or invalid {PluginInfo.Name} detected. Please download the official version."
+                        );
+                    }
+
+                    versionOkay = false;
+                }
             }
-
-            string content = request.downloadHandler.text;
-
-            Match versionMatch = Regex.Match(content, @"Version\s*=\s*""([^""]+)""");
-
-            if (!versionMatch.Success)
+            finally
             {
-                if (startup)
-                {
-                    NotificationLib.SendNotification(
-                        NotificationLib.NotificationType.Error,
-                        "Failed to parse version information."
-                    );
-                }
-
-                versionOkay = true;
-                yield break;
-            }
-
-            string githubVersion = versionMatch.Groups[1].Value;
-            Version local = new Version(PluginInfo.Version);
-            Version remote = new Version(githubVersion);
-
-            if (remote > local)
-            {
-                if (startup)
-                {
-                    NotificationLib.SendNotification(
-                        NotificationLib.NotificationType.Alert,
-                        $"Update available!\nLatest: {remote}\nCurrent: {local}\nDownload: github.com/GreySausages/ShibaGT-Genesis-Reborn"
-                    );
-                }
-
-                versionOkay = true;
-            }
-            else if (remote == local)
-            {
-                if (startup)
-                {
-                    NotificationLib.SendNotification(
-                        NotificationLib.NotificationType.Info,
-                        $"{PluginInfo.Name} is up to date! (v{local})"
-                    );
-                }
-
-                versionOkay = true;
-            }
-            else
-            {
-                if (startup)
-                {
-                    NotificationLib.SendNotification(
-                        NotificationLib.NotificationType.Error,
-                        $"Modified or invalid {PluginInfo.Name} detected. Please download the official version."
-                    );
-                }
-
-                versionOkay = false;
+                request.Dispose();
             }
         }
     }

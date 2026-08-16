@@ -23,7 +23,7 @@ namespace ShibaGTGenesisReborn.Menu
     public class Main : MonoBehaviour
     {
         public static Main Instance { get; private set; }
-        
+
         public static bool Loaded;
 
         private void Awake()
@@ -41,22 +41,19 @@ namespace ShibaGTGenesisReborn.Menu
                 bool keyboardOpen = UnityInput.Current.GetKey(keyboardButton);
                 trigger_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f;
                 InputHandler.Instance.RightGrip.IsPressed = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightGrab;
-                
-                GameObject a = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText");
-                GameObject b = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData");
-                GameObject c = GameObject.Find("motdHeadingText");
-                GameObject d = GameObject.Find("motdBodyText");
 
-                if (a != null && d != null && b != null && c != null && d != null)
+                CacheObjects();
+
+                if (cocHeading != null && motdBody != null && cocBody != null && motdHeading != null)
                 {
-                    a.GetComponent<TMP_Text>().text = $"<color=blue>ShibaGT Genesis Reborn v1</color>".ToUpper();
-                    a.GetComponent<TMP_Text>().fontSize = 75f;
-                    b.GetComponent<TMP_Text>().richText = true;
-                    b.GetComponent<TMP_Text>().text = "\nWelcome To ShibaGT Genesis Reborn!\nThis is a Remake of the Longest Lasting Paid Mod Menu Shiba GT Genesis!".ToUpper();
-                    c.GetComponent<TMP_Text>().text = "<color=blue>ShibaGT Genesis Reborn v1.0</color>".ToUpper();
-                    d.GetComponent<TMP_Text>().text = "Creditz To ShibaGT/TAI for making the original menu!\nThis is just a remake!\n<color=red>We Are Not Responsible For Any Bans Using This Mod Menu!</color>".ToUpper();
+                    cocHeading.GetComponent<TMP_Text>().text = $"<color=blue>ShibaGT Genesis Reborn v1</color>".ToUpper();
+                    cocHeading.GetComponent<TMP_Text>().fontSize = 75f;
+                    cocBody.GetComponent<TMP_Text>().richText = true;
+                    cocBody.GetComponent<TMP_Text>().text = "\nWelcome To ShibaGT Genesis Reborn!\nThis is a Remake of the Longest Lasting Paid Mod Menu Shiba GT Genesis!".ToUpper();
+                    motdHeading.GetComponent<TMP_Text>().text = "<color=blue>ShibaGT Genesis Reborn v1.0</color>".ToUpper();
+                    motdBody.GetComponent<TMP_Text>().text = "Creditz To ShibaGT/TAI for making the original menu!\nThis is just a remake!\n<color=red>We Are Not Responsible For Any Bans Using This Mod Menu!</color>".ToUpper();
                 }
-                
+
                 if (menu == null)
                 {
                     if (toOpen || keyboardOpen)
@@ -77,7 +74,10 @@ namespace ShibaGTGenesisReborn.Menu
                     }
                     else
                     {
-                        GameObject.Find("Shoulder Camera").transform.Find("CM vcam1").gameObject.SetActive(true);
+                        if (shoulderCamera != null)
+                        {
+                            shoulderCamera.transform.Find("CM vcam1").gameObject.SetActive(true);
+                        }
 
                         Rigidbody comp = menu.AddComponent(typeof(Rigidbody)) as Rigidbody;
                         if (rightHanded)
@@ -149,43 +149,45 @@ namespace ShibaGTGenesisReborn.Menu
                 Destroy(menu);
                 menu = null;
             }
-            
+
             if (reference != null)
             {
                 Destroy(reference);
                 reference = null;
             }
-            
+
             if (keyboard != null)
             {
                 Destroy(keyboard);
                 keyboard = null;
             }
-            
+
             if (lKey != null)
             {
                 Destroy(lKey);
                 lKey = null;
             }
-            
+
             if (rKey != null)
             {
                 Destroy(rKey);
                 rKey = null;
             }
-            
+
             if (searchDisplayText != null)
             {
                 Destroy(searchDisplayText.gameObject);
                 searchDisplayText = null;
             }
-            
+
             if (canvasObject != null)
             {
                 Destroy(canvasObject);
                 canvasObject = null;
             }
-            
+
+            CleanupResources();
+
             Instance = null;
         }
 
@@ -223,12 +225,12 @@ namespace ShibaGTGenesisReborn.Menu
 
             searchResults.Clear();
             string queryLower = searchQuery.ToLower();
-            
+
             foreach (ButtonInfo[] buttonList in Buttons.buttons)
             {
                 foreach (ButtonInfo button in buttonList)
                 {
-                    if (button.buttonText.ToLower().Contains(queryLower) || 
+                    if (button.buttonText.ToLower().Contains(queryLower) ||
                         (button.toolTip != null && button.toolTip.ToLower().Contains(queryLower)))
                     {
                         if (!searchResults.Contains(button))
@@ -255,7 +257,7 @@ namespace ShibaGTGenesisReborn.Menu
         public static void ShowSearchResults()
         {
             if (menu == null) return;
-            
+
             buttonsType = 999;
             pageNumber = 0;
             RecreateMenu();
@@ -264,11 +266,11 @@ namespace ShibaGTGenesisReborn.Menu
         public static void Search()
         {
             isSearching = !isSearching;
-            
+
             if (isSearching)
             {
                 searchQuery = "";
-                
+
                 if (keyboard == null)
                 {
                     keyboard = LoadAssetBundle("keyboard");
@@ -290,12 +292,12 @@ namespace ShibaGTGenesisReborn.Menu
                                 }
                             }
                             catch { }
-                            
-                            bool isExcluded = trans.name == "bg" || trans.name == "Canvas" || trans.name == "row1" || 
-                                             trans.name == "row2" || trans.name == "row3" || 
-                                             (trans.name == "space" && trans.parent.name == "Canvas") || 
+
+                            bool isExcluded = trans.name == "bg" || trans.name == "Canvas" || trans.name == "row1" ||
+                                             trans.name == "row2" || trans.name == "row3" ||
+                                             (trans.name == "space" && trans.parent.name == "Canvas") ||
                                              trans.name == "MenuSpawnPosition";
-                            
+
                             if (!isExcluded)
                             {
                                 KeyboardButton btn = trans.AddComponent<KeyboardButton>();
@@ -322,7 +324,7 @@ namespace ShibaGTGenesisReborn.Menu
                         Debug.Log("Keyboard loaded successfully");
                     }
                 }
-                
+
                 buttonsType = 999;
                 pageNumber = 0;
                 searchResults.Clear();
@@ -345,19 +347,19 @@ namespace ShibaGTGenesisReborn.Menu
                     UnityEngine.Object.Destroy(keyboard);
                     keyboard = null;
                 }
-                
+
                 if (searchDisplayText != null)
                 {
                     UnityEngine.Object.Destroy(searchDisplayText.gameObject);
                     searchDisplayText = null;
                 }
-                
+
                 buttonsType = 0;
                 pageNumber = 0;
                 searchQuery = "";
                 searchResults.Clear();
                 isSearching = false;
-                
+
                 if (menu != null)
                 {
                     RecreateMenu();
@@ -503,7 +505,7 @@ namespace ShibaGTGenesisReborn.Menu
                     parent = canvasObject.transform
                 }
             }.AddComponent<Text>();
-            
+
             if (isSearching)
             {
                 SearchText.text = "Searching...";
@@ -727,7 +729,7 @@ namespace ShibaGTGenesisReborn.Menu
             component.rotation = Quaternion.Euler(new Vector3(180f, 90f, 90f));
 
             ButtonInfo[] activeButtons;
-            
+
             if (buttonsType == 999 && searchResults.Count > 0)
             {
                 activeButtons = searchResults.Skip(pageNumber * buttonsPerPage).Take(buttonsPerPage).ToArray();
@@ -740,12 +742,12 @@ namespace ShibaGTGenesisReborn.Menu
             {
                 activeButtons = new ButtonInfo[0];
             }
-            
+
             for (int i = 0; i < activeButtons.Length; i++)
             {
                 CreateButton(i * 0.095f, activeButtons[i]);
             }
-            
+
             if (isSearching)
             {
                 CreateSearchDisplay();
@@ -763,7 +765,7 @@ namespace ShibaGTGenesisReborn.Menu
                         parent = canvasObject.transform
                     }
                 }.AddComponent<Text>();
-                
+
                 searchDisplayText.font = currentFont;
                 searchDisplayText.text = "Search: " + searchQuery + "_";
                 searchDisplayText.fontSize = 1;
@@ -771,7 +773,7 @@ namespace ShibaGTGenesisReborn.Menu
                 searchDisplayText.alignment = TextAnchor.MiddleCenter;
                 searchDisplayText.resizeTextForBestFit = true;
                 searchDisplayText.resizeTextMinSize = 0;
-                
+
                 RectTransform component = searchDisplayText.GetComponent<RectTransform>();
                 component.localPosition = Vector3.zero;
                 component.sizeDelta = new Vector2(0.28f, 0.03f);
@@ -926,11 +928,22 @@ namespace ShibaGTGenesisReborn.Menu
             {
                 try
                 {
-                    TPC = GameObject.Find("Player Objects/Third Person Camera/Shoulder Camera").GetComponent<Camera>();
+                    if (cachedTPC == null)
+                    {
+                        GameObject shoulderCam = GameObject.Find("Player Objects/Third Person Camera/Shoulder Camera");
+                        if (shoulderCam != null)
+                        {
+                            cachedTPC = shoulderCam.GetComponent<Camera>();
+                        }
+                    }
+                    TPC = cachedTPC;
                 }
                 catch { }
 
-                GameObject.Find("Shoulder Camera").transform.Find("CM vcam1").gameObject.SetActive(false);
+                if (shoulderCamera != null)
+                {
+                    shoulderCamera.transform.Find("CM vcam1").gameObject.SetActive(false);
+                }
 
                 if (TPC != null)
                 {
@@ -1261,25 +1274,27 @@ namespace ShibaGTGenesisReborn.Menu
 
             return null;
         }
-        
+
         public static AssetBundle assetBundle = null;
 
         public static GameObject LoadAssetBundle(string assetName)
         {
             GameObject gameObject = null;
 
-            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles.gen");
-            if (stream != null)
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles.gen"))
             {
-                if (assetBundle == null)
+                if (stream != null)
                 {
-                    assetBundle = AssetBundle.LoadFromStream(stream);
+                    if (assetBundle == null)
+                    {
+                        assetBundle = AssetBundle.LoadFromStream(stream);
+                    }
+                    gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>(assetName));
                 }
-                gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>(assetName));
-            }
-            else
-            {
-                Debug.LogError("Failed to load asset from resource: " + assetName);
+                else
+                {
+                    Debug.LogError("Failed to load asset from resource: " + assetName);
+                }
             }
 
             return gameObject;
@@ -1289,18 +1304,20 @@ namespace ShibaGTGenesisReborn.Menu
         {
             GameObject gameObject = null;
 
-            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles." + fullassetName);
-            if (stream != null)
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles." + fullassetName))
             {
-                if (assetBundle == null)
+                if (stream != null)
                 {
-                    assetBundle = AssetBundle.LoadFromStream(stream);
+                    if (assetBundle == null)
+                    {
+                        assetBundle = AssetBundle.LoadFromStream(stream);
+                    }
+                    gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>("IngameGUI"));
                 }
-                gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>("IngameGUI"));
-            }
-            else
-            {
-                Debug.LogError("Failed to load asset from resource: " + fullassetName);
+                else
+                {
+                    Debug.LogError("Failed to load asset from resource: " + fullassetName);
+                }
             }
 
             return gameObject;
@@ -1310,21 +1327,72 @@ namespace ShibaGTGenesisReborn.Menu
         {
             GameObject gameObject = null;
 
-            Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles." + fullassetName);
-            if (stream != null)
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ShibaGTGenesisReborn.AssetBundles." + fullassetName))
             {
-                if (assetBundle == null)
+                if (stream != null)
                 {
-                    assetBundle = AssetBundle.LoadFromStream(stream);
+                    if (assetBundle == null)
+                    {
+                        assetBundle = AssetBundle.LoadFromStream(stream);
+                    }
+                    gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>(fullassetName));
                 }
-                gameObject = Instantiate<GameObject>(assetBundle.LoadAsset<GameObject>(fullassetName));
-            }
-            else
-            {
-                Debug.LogError("Failed to load asset from resource: " + fullassetName);
+                else
+                {
+                    Debug.LogError("Failed to load asset from resource: " + fullassetName);
+                }
             }
 
             return gameObject;
+        }
+
+        private static void CacheObjects()
+        {
+            if (cocHeading == null)
+            {
+                cocHeading = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText");
+            }
+            if (cocBody == null)
+            {
+                cocBody = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData");
+            }
+            if (motdHeading == null)
+            {
+                motdHeading = GameObject.Find("motdHeadingText");
+            }
+            if (motdBody == null)
+            {
+                motdBody = GameObject.Find("motdBodyText");
+            }
+            if (shoulderCamera == null)
+            {
+                shoulderCamera = GameObject.Find("Shoulder Camera");
+            }
+        }
+
+        public static void CleanupResources()
+        {
+            if (searchResults != null)
+            {
+                searchResults.Clear();
+            }
+            if (favoriteButtons != null)
+            {
+                favoriteButtons.Clear();
+            }
+
+            if (assetBundle != null)
+            {
+                assetBundle.Unload(true);
+                assetBundle = null;
+            }
+
+            cocHeading = null;
+            cocBody = null;
+            motdHeading = null;
+            motdBody = null;
+            shoulderCamera = null;
+            cachedTPC = null;
         }
 
         public static GameObject menu;
@@ -1335,6 +1403,13 @@ namespace ShibaGTGenesisReborn.Menu
         public static SphereCollider buttonCollider;
         public static Camera TPC;
         public static Text fpsObject;
+
+        private static GameObject cocHeading;
+        private static GameObject cocBody;
+        private static GameObject motdHeading;
+        private static GameObject motdBody;
+        private static GameObject shoulderCamera;
+        private static Camera cachedTPC;
 
         public static int pageNumber = 0;
         public static int buttonsType = 0;
