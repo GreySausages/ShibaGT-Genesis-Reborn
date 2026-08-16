@@ -156,10 +156,10 @@ namespace ShibaGTGenesisReborn.Mods
                 isRightHand = true;
             }
 
-            float rGrip = ControllerInputPoller.instance.rightControllerGripFloat;
-            float rTrig = ControllerInputPoller.instance.rightControllerIndexFloat;
-            float lGrip = ControllerInputPoller.instance.leftControllerGripFloat;
-            float lTrig = ControllerInputPoller.instance.leftControllerIndexFloat;
+            bool rGrip = InputHandler.Instance.RightGrip.IsPressed;
+            bool rTrig = InputHandler.Instance.RightTrigger.IsPressed;
+            bool lGrip = InputHandler.Instance.LeftGrip.IsPressed;
+            bool lTrig = InputHandler.Instance.LeftTrigger.IsPressed;
 
             if (Held && Hand != null)
             {
@@ -170,10 +170,10 @@ namespace ShibaGTGenesisReborn.Mods
                     Obj.UpdateNetworkPosition();
                 
                 if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = true;
-                float trigger = isRightHand ? rTrig : lTrig;
-                float grip = isRightHand ? rGrip : lGrip;
+                bool trigger = isRightHand ? rTrig : lTrig;
+                bool grip = isRightHand ? rGrip : lGrip;
                 bool nearMouth = mouth != null && Vector3.Distance(Obj.transform.position, mouth.position) < 0.60f;
-                bool inhaling = trigger > 0.3f && nearMouth && Held;
+                bool inhaling = trigger && nearMouth && Held;
 
                 if (inhaling)
                 {
@@ -185,7 +185,7 @@ namespace ShibaGTGenesisReborn.Mods
                     wasInhaling = true;
                 }
 
-                if (wasInhaling && !nearMouth && trigger < 0.3f && inhaleAmount > 0.05f && !isExhaling)
+                if (wasInhaling && !nearMouth && !trigger && inhaleAmount > 0.05f && !isExhaling)
                 {
                     TriggerExhale();
                     wasInhaling = false;
@@ -197,7 +197,7 @@ namespace ShibaGTGenesisReborn.Mods
                     else if (!inhaling && p.isPlaying) p.Stop();
                 }
 
-                if (grip < 0.1f)
+                if (!grip)
                 {
                     Held = false;
                     if (Obj.TryGetComponent(out Rigidbody releaseRb))
@@ -214,7 +214,7 @@ namespace ShibaGTGenesisReborn.Mods
             {
                 if (Obj.TryGetComponent(out Rigidbody rb))
                     rb.isKinematic = false;
-                if (rGrip > 0.5f && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f)
+                if (rGrip && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f)
                 {
                     Held = true;
                     everGrabbed = true;
@@ -223,7 +223,7 @@ namespace ShibaGTGenesisReborn.Mods
                     OffP = Hand.InverseTransformPoint(Obj.transform.position);
                     OffR = Quaternion.Inverse(Hand.rotation) * Obj.transform.rotation;
                 }
-                else if (lGrip > 0.5f && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f)
+                else if (lGrip && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f)
                 {
                     Held = true;
                     everGrabbed = true;

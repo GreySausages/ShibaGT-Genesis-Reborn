@@ -37,10 +37,10 @@ namespace ShibaGTGenesisReborn.Menu
         {
             try
             {
-                bool toOpen = (!rightHanded && ControllerInputPoller.instance.leftControllerSecondaryButton) || (rightHanded && ControllerInputPoller.instance.rightControllerPrimaryButton);
+                bool toOpen = (!rightHanded && InputHandler.Instance.LeftSecondary.IsPressed) || (rightHanded && InputHandler.Instance.RightPrimary.IsPressed);
                 bool keyboardOpen = UnityInput.Current.GetKey(keyboardButton);
-                trigger_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f;
-                InputHandler.Instance.RightGrip.IsPressed = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightGrab;
+                trigger_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : InputHandler.Instance.RightTrigger.IsPressed;
+                InputHandler.Instance.RightGrip.IsPressed = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : InputHandler.Instance.RightGrip.IsPressed;
                 
                 GameObject a = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/CodeOfConductHeadingText");
                 GameObject b = GameObject.Find("Environment Objects/LocalObjects_Prefab/TreeRoom/COCBodyText_TitleData");

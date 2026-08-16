@@ -38,12 +38,134 @@ namespace ShibaGTGenesisReborn.Mods
         private static Vector3 thrownGrenadePosition;
         private static Vector3 thrownGrenadeVelocity;
 
+        private static GameObject screenOverlayObject;
+        private static Material screenOverlayMaterial;
+        private static MeshRenderer screenOverlayRenderer;
+
         private static bool isHoldingGrenade;
         private static bool isCooldownActive;
         private static bool isGrounded;
         private static float cooldownEndTime;
         private const float GrenadeRadius = 0.06f;
         private const float GrenadeScale = 1.6f;
+
+        private static bool isBlindActive;
+        private static float blindStartTime;
+        private static float blindTotalDuration;
+        private static float blindMaxIntensity;
+
+        private void Update()
+        {
+            UpdateBlindEffect();
+        }
+
+        private static void UpdateBlindEffect()
+        {
+            if (!isBlindActive)
+            {
+                if (screenOverlayRenderer != null && screenOverlayRenderer.enabled)
+                {
+                    screenOverlayRenderer.enabled = false;
+                }
+                return;
+            }
+
+            float elapsed = Time.time - blindStartTime;
+            if (elapsed >= blindTotalDuration)
+            {
+                isBlindActive = false;
+                if (screenOverlayRenderer != null)
+                {
+                    screenOverlayRenderer.enabled = false;
+                }
+                return;
+            }
+
+            float fadeInDuration = Mathf.Min(0.25f, blindTotalDuration * 0.08f);
+            float fadeOutDuration = Mathf.Min(2.5f, blindTotalDuration * 0.45f);
+
+            float currentAlpha;
+            if (elapsed < fadeInDuration)
+            {
+                float progress = elapsed / fadeInDuration;
+                currentAlpha = blindMaxIntensity * Mathf.SmoothStep(0f, 1f, progress);
+            }
+            else if (elapsed < (blindTotalDuration - fadeOutDuration))
+            {
+                currentAlpha = blindMaxIntensity;
+            }
+            else
+            {
+                float fadeElapsed = elapsed - (blindTotalDuration - fadeOutDuration);
+                float progress = Mathf.Clamp01(fadeElapsed / fadeOutDuration);
+                currentAlpha = blindMaxIntensity * Mathf.SmoothStep(1f, 0f, progress);
+            }
+
+            EnsureOverlayExists();
+
+            if (screenOverlayRenderer != null && screenOverlayMaterial != null)
+            {
+                screenOverlayRenderer.enabled = currentAlpha > 0.001f;
+                screenOverlayMaterial.color = new Color(1f, 1f, 1f, currentAlpha);
+            }
+        }
+
+        private static void EnsureOverlayExists()
+        {
+            Transform cameraTransform = GetCameraTransform();
+            if (cameraTransform == null)
+            {
+                return;
+            }
+
+            if (screenOverlayObject == null)
+            {
+                screenOverlayObject = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                screenOverlayObject.name = "StunGrenade_ScreenOverlay";
+
+                Collider quadCollider = screenOverlayObject.GetComponent<Collider>();
+                if (quadCollider != null)
+                {
+                    Destroy(quadCollider);
+                }
+
+                Shader overlayShader = Shader.Find("GUI/Text Shader")
+                    ?? Shader.Find("Sprites/Default")
+                    ?? Shader.Find("Universal Render Pipeline/Unlit")
+                    ?? Shader.Find("Unlit/Transparent");
+
+                screenOverlayMaterial = new Material(overlayShader)
+                {
+                    renderQueue = 4000
+                };
+                screenOverlayMaterial.mainTexture = Texture2D.whiteTexture;
+                screenOverlayMaterial.color = new Color(1f, 1f, 1f, 0f);
+
+                screenOverlayRenderer = screenOverlayObject.GetComponent<MeshRenderer>();
+                screenOverlayRenderer.material = screenOverlayMaterial;
+                screenOverlayRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                screenOverlayRenderer.receiveShadows = false;
+                screenOverlayRenderer.enabled = false;
+            }
+
+            if (screenOverlayObject.transform.parent != cameraTransform)
+            {
+                screenOverlayObject.transform.SetParent(cameraTransform, false);
+                screenOverlayObject.transform.localPosition = new Vector3(0f, 0f, 0.12f);
+                screenOverlayObject.transform.localRotation = Quaternion.identity;
+                screenOverlayObject.transform.localScale = new Vector3(2.5f, 2.5f, 1f);
+            }
+        }
+
+        public static void TriggerStunBlind(float intensity, float duration)
+        {
+            EnsureInitialized();
+            isBlindActive = true;
+            blindStartTime = Time.time;
+            blindTotalDuration = Mathf.Max(duration, 0.5f);
+            blindMaxIntensity = Mathf.Clamp01(intensity);
+            EnsureOverlayExists();
+        }
 
         public static void StunLoop()
         {
@@ -184,8 +306,11 @@ namespace ShibaGTGenesisReborn.Mods
                 thrownGrenadeObject = null;
             }
 
+            float audioDuration = 5.0f;
             if (stunAudioClip != null)
             {
+                audioDuration = stunAudioClip.length;
+
                 GameObject audioObj = new GameObject("StunGrenadeAudio");
                 audioObj.transform.position = explosionPosition;
                 AudioSource audioSource = audioObj.AddComponent<AudioSource>();
@@ -197,6 +322,49 @@ namespace ShibaGTGenesisReborn.Mods
                 audioSource.rolloffMode = AudioRolloffMode.Linear;
                 audioSource.Play();
                 Destroy(audioObj, stunAudioClip.length + 0.5f);
+            }
+
+            Transform cameraTransform = GetCameraTransform();
+            if (cameraTransform != null)
+            {
+                Vector3 cameraPosition = cameraTransform.position;
+                Vector3 vectorToExplosion = explosionPosition - cameraPosition;
+                float distance = vectorToExplosion.magnitude;
+
+                if (distance > 0.001f)
+                {
+                    Vector3 directionToExplosion = vectorToExplosion / distance;
+                    float viewAngle = Vector3.Angle(cameraTransform.forward, directionToExplosion);
+
+                    bool hasDirectLineOfSight = !Physics.Raycast(
+                        cameraPosition,
+                        directionToExplosion,
+                        out RaycastHit _,
+                        Mathf.Max(0.01f, distance - 0.15f),
+                        GunLib.BypassLayers);
+
+                    const float maxBlindingDistance = 35f;
+                    if (hasDirectLineOfSight && distance <= maxBlindingDistance)
+                    {
+                        const float maxViewAngle = 70f;
+                        if (viewAngle <= maxViewAngle)
+                        {
+                            float angleFactor = Mathf.Clamp01((maxViewAngle - viewAngle) / 40f);
+                            float distanceFactor = Mathf.Clamp01(1f - (distance / maxBlindingDistance));
+
+                            float intensity = angleFactor * (0.6f + 0.4f * distanceFactor);
+                            if (viewAngle <= 40f)
+                            {
+                                intensity = 1.0f;
+                            }
+
+                            if (intensity > 0.1f)
+                            {
+                                TriggerStunBlind(intensity, audioDuration);
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -221,6 +389,12 @@ namespace ShibaGTGenesisReborn.Mods
             isHoldingGrenade = false;
             isCooldownActive = false;
             isGrounded = false;
+            isBlindActive = false;
+
+            if (screenOverlayRenderer != null)
+            {
+                screenOverlayRenderer.enabled = false;
+            }
 
             if (heldGrenadeObject != null)
             {
@@ -232,6 +406,36 @@ namespace ShibaGTGenesisReborn.Mods
             {
                 Destroy(thrownGrenadeObject);
                 thrownGrenadeObject = null;
+            }
+        }
+
+        private static Transform GetCameraTransform()
+        {
+            if (GorillaTagger.Instance != null && GorillaTagger.Instance.mainCamera != null)
+            {
+                return GorillaTagger.Instance.mainCamera.transform;
+            }
+
+            if (Camera.main != null)
+            {
+                return Camera.main.transform;
+            }
+
+            return null;
+        }
+
+        private void OnDestroy()
+        {
+            if (screenOverlayObject != null)
+            {
+                Destroy(screenOverlayObject);
+                screenOverlayObject = null;
+            }
+
+            if (screenOverlayMaterial != null)
+            {
+                Destroy(screenOverlayMaterial);
+                screenOverlayMaterial = null;
             }
         }
 
