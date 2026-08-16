@@ -60,10 +60,10 @@ namespace ShibaGTGenesisReborn.Mods.Custom
                     isRightHand = true;
                 }
 
-                float rGrip = ControllerInputPoller.instance.rightControllerGripFloat;
-                float rTrig = ControllerInputPoller.instance.rightControllerIndexFloat;
-                float lGrip = ControllerInputPoller.instance.leftControllerGripFloat;
-                float lTrig = ControllerInputPoller.instance.leftControllerIndexFloat;
+                bool rGrip = InputHandler.Instance.RightGrip.IsPressed;
+                bool rTrig = InputHandler.Instance.RightTrigger.IsPressed;
+                bool lGrip = InputHandler.Instance.LeftGrip.IsPressed;
+                bool lTrig = InputHandler.Instance.LeftTrigger.IsPressed;
 
                 if (Time.time > ignoreTimer)
                 {
@@ -90,15 +90,16 @@ namespace ShibaGTGenesisReborn.Mods.Custom
 
                     if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = true;
 
-                    float currentTrig = isRightHand ? rTrig : lTrig;
-                    float currentGrip = isRightHand ? rGrip : lGrip;
+                    bool currentTrig = isRightHand ? rTrig : lTrig;
+                    bool currentGrip = isRightHand ? rGrip : lGrip;
 
-                    float sq = 0.045f * (1f - (currentTrig * 0.4f));
+                    float trigFactor = currentTrig ? 1f : 0f;
+                    float sq = 0.045f * (1f - (trigFactor * 0.4f));
                     Obj.transform.localScale = new Vector3(sq, 0.045f, sq);
 
-                    if (currentTrig > 0.8f && Aud && CA && !Aud.isPlaying) Aud.Play();
+                    if (currentTrig && Aud && CA && !Aud.isPlaying) Aud.Play();
 
-                    if (currentGrip < 0.1f)
+                    if (!currentGrip)
                     {
                         Held = false;
                         if (Obj.TryGetComponent(out Rigidbody releaseRb))
@@ -118,7 +119,7 @@ namespace ShibaGTGenesisReborn.Mods.Custom
                     if (Obj.TryGetComponent(out Rigidbody rb)) rb.isKinematic = false;
                     Obj.transform.localScale = new Vector3(0.045f, 0.045f, 0.045f);
 
-                    if (rGrip > 0.5f && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f)
+                    if (rGrip && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f)
                     {
                         Held = true;
                         Hand = player.RightHand.controllerTransform;
@@ -126,7 +127,7 @@ namespace ShibaGTGenesisReborn.Mods.Custom
                         OffP = Hand.InverseTransformPoint(Obj.transform.position);
                         OffR = Quaternion.Inverse(Hand.rotation) * Obj.transform.rotation;
                     }
-                    else if (lGrip > 0.5f && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f)
+                    else if (lGrip && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f)
                     {
                         Held = true;
                         Hand = player.LeftHand.controllerTransform;

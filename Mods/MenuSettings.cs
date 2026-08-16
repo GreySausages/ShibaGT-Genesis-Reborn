@@ -59,22 +59,25 @@ namespace ShibaGTGenesisReborn.Mods
 
         public static void Save()
         {
+            string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
             List<string> list = new List<string>();
             foreach (ButtonInfo[] btn1 in Buttons.buttons)
             {
                 foreach (ButtonInfo btn in btn1)
                 {
-                    if (btn.enabled)
+                    if (btn.enabled || btn.isFavorite)
                     {
-                        list.Add(btn.buttonText);
+                        list.Add(btn.isFavorite ? "fav" + btn.buttonText : btn.buttonText);
                     }
+                    Directory.CreateDirectory("Genesis");
+                    File.WriteAllLines(prefsPath, list);
                 }
             }
             if (Main.what)
             {
                 list.Add("SideMagfoar");
             }
-            string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
+            Directory.CreateDirectory("Genesis");
             File.WriteAllLines(prefsPath, list);
         }
 
@@ -107,12 +110,18 @@ namespace ShibaGTGenesisReborn.Mods
                                 info1?.enableMethod?.Invoke();
                                 info1?.method?.Invoke();
                             }
+                            if ("fav" + info1.buttonText == shit2 && !info1.isFavorite)
+                            {
+                                info1.isFavorite = true;
+                                Main.favoriteButtons.Add(info1);
+                                Main.UpdateFavoritesCategory();
+                            }
                         }
-                    }
-                    if (shit2.Contains("SideMagfoar"))
-                    {
-                        Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
-                        Main.what = true;
+                        if (shit2.Contains("SideMagfoar"))
+                        {
+                            Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
+                            Main.what = true;
+                        }
                     }
                 }
             }

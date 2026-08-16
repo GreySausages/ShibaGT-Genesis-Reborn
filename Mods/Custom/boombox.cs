@@ -107,8 +107,8 @@ namespace ShibaGTGenesisReborn.Mods.Custom
             var player = GorillaLocomotion.GTPlayer.Instance;
             if (!player) return;
 
-            float rGrip = ControllerInputPoller.instance.rightControllerGripFloat;
-            float lGrip = ControllerInputPoller.instance.leftControllerGripFloat;
+            bool rGrip = InputHandler.Instance.RightGrip.IsPressed;
+            bool lGrip = InputHandler.Instance.LeftGrip.IsPressed;
 
             if (Time.time > ignoreTimer)
             {
@@ -130,8 +130,9 @@ namespace ShibaGTGenesisReborn.Mods.Custom
                 if (NetworkingLibrary.Instance != null && NetworkingLibrary.Instance.NetworkEnabled)
                     Obj.UpdateNetworkPosition();
 
-                float grip = isRightHand ? rGrip : lGrip;
-                if (isRightHand ? ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f : ControllerInputPoller.instance.leftControllerIndexFloat > 0.5f)
+                bool grip = isRightHand ? rGrip : lGrip;
+                bool trig = isRightHand ? InputHandler.Instance.RightTrigger.IsPressed : InputHandler.Instance.LeftTrigger.IsPressed;
+                if (trig)
                     if (Aud.clip != null && !Aud.isPlaying) 
                     {
                         Aud.Play();
@@ -139,7 +140,7 @@ namespace ShibaGTGenesisReborn.Mods.Custom
                             Obj.SyncBoomboxAudio();
                     }
 
-                if (grip < 0.1f)
+                if (!grip)
                 {
                     Held = false;
                     Transform body = GorillaTagger.Instance.offlineVRRig.transform;
@@ -170,8 +171,8 @@ namespace ShibaGTGenesisReborn.Mods.Custom
 
             if (!Held)
             {
-                if (rGrip > 0.5f && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f) Grab(player.RightHand.controllerTransform, true);
-                else if (lGrip > 0.5f && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f) Grab(player.LeftHand.controllerTransform, false);
+                if (rGrip && Vector3.Distance(player.RightHand.controllerTransform.position, Obj.transform.position) < 0.15f) Grab(player.RightHand.controllerTransform, true);
+                else if (lGrip && Vector3.Distance(player.LeftHand.controllerTransform.position, Obj.transform.position) < 0.15f) Grab(player.LeftHand.controllerTransform, false);
             }
         }
 
