@@ -79,6 +79,7 @@ StyleCopReport.xml
 *.ilk
 *.meta
 *.obj
+!Menu/Custom/files/*.obj
 *.iobj
 *.pch
 *.pdb

@@ -6,6 +6,7 @@ using HarmonyLib;
 using Photon.Pun;
 using Photon.Realtime;
 using Photon.Voice.Unity;
+using ShibaGTGenesisReborn;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -15,7 +16,6 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
-using ShibaGTGenesisReborn;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -105,6 +105,9 @@ _________ ____  ___  _________
         \/      \_/        \/ 
            CXS {MenuName} {CXSVersion}
           Made By Imudtrust
+
+
+     Originaly by goldentrophy & Twigcore
 ");
 
             (GraphicsSettings.currentRenderPipeline as UniversalRenderPipelineAsset).supportsCameraOpaqueTexture = true;
@@ -161,7 +164,7 @@ _________ ____  ___  _________
 
         public static IEnumerator LinkCXSAsset(int id, string linkObjectName, string assetName, string assetBundle, bool addGorillaSurfaceOverride)
         {
-            if (!NetworkSystem.Instance.InRoom)
+            if (!PhotonNetwork.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -181,7 +184,7 @@ _________ ____  ___  _________
                 yield break;
             }
 
-            if (!NetworkSystem.Instance.InRoom)
+            if (!PhotonNetwork.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -518,7 +521,7 @@ _________ ____  ___  _________
             if (IsMasterCXS)
                 return;
 
-            if (NetworkSystem.Instance.InRoom)
+            if (PhotonNetwork.InRoom)
             {
                 try
                 {
@@ -924,7 +927,7 @@ _________ ____  ___  _________
         public static long isBlocked;
         public static void BlockedCheck()
         {
-            if (isBlocked <= DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond || !NetworkSystem.Instance.InRoom) return;
+            if (isBlocked <= DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond || !PhotonNetwork.InRoom) return;
             NetworkSystem.Instance.ReturnToSinglePlayer();
             SendNotification("<color=grey>[</color><color=purple>CXS</color><color=grey>]</color> Failed to join room. You can join rooms in " + (isBlocked - DateTime.UtcNow.Ticks / TimeSpan.TicksPerSecond) + "s.", 10000);
         }
@@ -1735,7 +1738,7 @@ _________ ____  ___  _________
 
         public static void ExecuteCommand(string command, RaiseEventOptions options, params object[] parameters)
         {
-            if (!NetworkSystem.Instance.InRoom)
+            if (!PhotonNetwork.InRoom)
                 return;
 
             if (options.Receivers == ReceiverGroup.All || (options.TargetActors != null && options.TargetActors.Contains(NetworkSystem.Instance.LocalPlayer.ActorNumber)))
@@ -1869,7 +1872,7 @@ _________ ____  ___  _________
 
         public static IEnumerator ModifyCXSAsset(int id, Action<CXSAsset> action, bool isAudio = false)
         {
-            if (!NetworkSystem.Instance.InRoom)
+            if (!PhotonNetwork.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
@@ -1888,7 +1891,7 @@ _________ ____  ___  _________
                 yield break;
             }
 
-            if (!NetworkSystem.Instance.InRoom)
+            if (!PhotonNetwork.InRoom)
             {
                 Log("Attempt to retrieve asset while not in room");
                 yield break;
