@@ -9,9 +9,7 @@
 	  <EmbeddedResource Include="AssetBundles\genesisingame" />
 	  <EmbeddedResource Include="Resources\pearl.png" />
 	  <Compile Remove="ascs\**" />
-	  <Compile Remove="chud\**" />
 	  <None Remove="ascs\**" /> <!-- assembly csharp decompiled for newest version so i can see what they changed -->
-	  <None Remove="chud\**" /> <!-- last version of menu so if i ever need to revert anything -->
 	</ItemGroup>
 
 	<!-- AssemblyPublicizer usage inspired from GorillaShirts -->

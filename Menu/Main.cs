@@ -12,9 +12,10 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
+using ShibaGTGenesisReborn.Mods;
 using static ShibaGTGenesisReborn.Libs.GunLib;
 using static ShibaGTGenesisReborn.Menu.Buttons;
-using static ShibaGTGenesisReborn.Menu.mods;
+using static ShibaGTGenesisReborn.Mods.mods;
 using static ShibaGTGenesisReborn.Settings;
 
 namespace ShibaGTGenesisReborn.Menu
@@ -29,6 +30,7 @@ namespace ShibaGTGenesisReborn.Menu
         {
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            MenuAudio.Initialize();
         }
 
         private void Update()
@@ -431,7 +433,7 @@ namespace ShibaGTGenesisReborn.Menu
                 }
             }.AddComponent<Text>();
             text.font = currentFont;
-            text.text = PluginInfo.Name
+            text.text = PluginInfo.Name;
             text.fontSize = 1;
             text.color = textColors[0];
             text.supportRichText = true;
@@ -1043,6 +1045,7 @@ namespace ShibaGTGenesisReborn.Menu
         public static void Load()
         {
             UpdateFavoritesCategory();
+            MenuAudio.Initialize();
         }
 
         public static void Toggle(string buttonText, ButtonInfo target = null)

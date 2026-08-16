@@ -118,6 +118,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Remove All Prefs", method =() => mods.Removeprefs(), isTogglable = false, enabled = false, toolTip = "Reset saved preferences"},
                 new ButtonInfo { buttonText = "PPos", overlapText = "Menu Layout: ShibaGT", isTogglable = false, method =() => mods.SwitchPagePos(), enabled = false, toolTip = "Switch menu layout"},
                 new ButtonInfo { buttonText = "OutlineMenu", isTogglable = true, enableMethod =() => Main.what3 = true, disableMethod =() => Main.what3 = false, enabled = Main.what3, toolTip = "Toggle menu outline"},
+                new ButtonInfo { buttonText = "Custom Button Audio", isTogglable = true, enableMethod =() => Button.customAudio = true, disableMethod =() => Button.customAudio = false, enabled = Button.customAudio, toolTip = "Use our custom button click audios"},
                 new ButtonInfo { buttonText = "COC", overlapText = "Outline: Blue", isTogglable = false, method =() => mods.ChangeOutlineColor(), enabled = false, toolTip = "Cycle outline color"},
                 new ButtonInfo { buttonText = "Panic Button", enableMethod =() => mods.EnablePanic(), disableMethod =() => mods.DisablePanic(), isTogglable = true, toolTip = "Disable all mods and disconnect safely"},
             },
