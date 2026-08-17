@@ -10,7 +10,6 @@ namespace ShibaGTGenesisReborn.Patches
 {
     public class AntiCheatPatches
     {
-        // this is from my menu called Undefined.
         [HarmonyPatch(typeof(MonkeAgent), nameof(MonkeAgent.SendReport))]
         public class SendReportPatch
         {

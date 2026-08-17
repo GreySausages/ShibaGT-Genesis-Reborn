@@ -7,24 +7,6 @@ using UnityEngine;
 
 namespace ShibaGTGenesisReborn.Patches
 {
-    [HarmonyPatch(typeof(MonkeAgent), "SendReport")]
-    internal class AntiCheat : MonoBehaviour
-    {
-        private static bool Prefix(string susReason, string susId, string susNick)
-        {
-            return false;
-        }
-    }
-
-    [HarmonyPatch(typeof(MonkeAgent), "LogErrorCount")]
-    public class NoLogErrorCount : MonoBehaviour
-    {
-        private static bool Prefix(string logString, string stackTrace, LogType type)
-        {
-            return false;
-        }
-    }
-
     [HarmonyPatch(typeof(MonkeAgent), "IncrementRPCCallLocal")]
     public class NoIncrementRPCCallLocal : MonoBehaviour
     {

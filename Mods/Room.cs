@@ -59,9 +59,18 @@ namespace ShibaGTGenesisReborn.Mods
                     MonkeAgent.instance.rpcErrorMax = int.MaxValue;
                     MonkeAgent.instance.rpcCallLimit = int.MaxValue;
                     MonkeAgent.instance.logErrorMax = int.MaxValue;
+                    // MonkeAgent.instance.logErrorCount = 0;
                     MonkeAgent.instance.userDecayTime = 0f;
-                    MonkeAgent.instance.reportedPlayers.Clear();
-                    MonkeAgent.instance.userRPCCalls.Clear();
+                    // MonkeAgent.instance.lastCheck = float.MaxValue;
+                    // MonkeAgent.instance.reportCheckCooldown = float.MaxValue;
+                    // MonkeAgent.instance.testAssault = false;
+                    // MonkeAgent.instance._sendReport = false;
+                    // MonkeAgent.instance._suspiciousPlayerId = "";
+                    // MonkeAgent.instance._suspiciousPlayerName = "";
+                    // MonkeAgent.instance._suspiciousReason = "";
+
+                    MonkeAgent.instance.reportedPlayers?.Clear();
+                    MonkeAgent.instance.userRPCCalls?.Clear();
 
                     Application.logMessageReceived -= MonkeAgent.instance.LogErrorCount;
                     GorillaSlicerSimpleManager.UnregisterSliceable(MonkeAgent.instance, GorillaSlicerSimpleManager.UpdateStep.Update);
@@ -69,8 +78,23 @@ namespace ShibaGTGenesisReborn.Mods
 
                 PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
                 PhotonNetwork.QuickResends = int.MaxValue;
+
+                /*
+                if (PhotonNetwork.NetworkingClient != null && PhotonNetwork.NetworkingClient.LoadBalancingPeer != null)
+                {
+                    PhotonNetwork.NetworkingClient.LoadBalancingPeer.DisconnectTimeout = 60000;
+                    PhotonNetwork.NetworkingClient.LoadBalancingPeer.SentCountAllowance = int.MaxValue;
+                }
+
+                if (GorillaScoreboardTotalUpdater.instance != null && GorillaScoreboardTotalUpdater.instance.reportDict != null)
+                {
+                    GorillaScoreboardTotalUpdater.instance.reportDict.Clear();
+                }
+
+                while (GorillaTelemetry.telemetryEventsQueueMothership != null && GorillaTelemetry.telemetryEventsQueueMothership.TryDequeue(out _)) { }
+                */
             }
-            catch { }
+            catch { /* if it goes here its a skill issue */ }
         }
 
         /*
