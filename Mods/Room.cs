@@ -59,7 +59,7 @@ namespace ShibaGTGenesisReborn.Mods
                     MonkeAgent.instance.rpcErrorMax = int.MaxValue;
                     MonkeAgent.instance.rpcCallLimit = int.MaxValue;
                     MonkeAgent.instance.logErrorMax = int.MaxValue;
-                    // MonkeAgent.instance.logErrorCount = 0;
+                    MonkeAgent.instance.logErrorCount = 0;
                     MonkeAgent.instance.userDecayTime = 0f;
                     // MonkeAgent.instance.lastCheck = float.MaxValue;
                     // MonkeAgent.instance.reportCheckCooldown = float.MaxValue;
