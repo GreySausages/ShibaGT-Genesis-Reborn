@@ -1,3 +1,4 @@
+using System;
 using BepInEx;
 using GorillaLocomotion;
 using Photon.Pun;
@@ -103,14 +104,7 @@ namespace ShibaGTGenesisReborn.Mods
             PlatColor = PlatColors[Platcolor];
         }
 
-        public static void Noclip()
-        {
-            MeshCollider[] colliders = Resources.FindObjectsOfTypeAll<MeshCollider>();
-            foreach (MeshCollider collider in colliders)
-            {
-                collider.enabled = !(InputHandler.Instance.RightTrigger.IsPressed);
-            }
-        }
+        public static void Noclip() => Noclipistuff(!InputHandler.Instance.RightTrigger.IsPressed);
 
         public static void CarMonkeyandfly(float speed, bool fly)
         {
@@ -176,7 +170,6 @@ namespace ShibaGTGenesisReborn.Mods
 
                     GorillaLocomotion.GTPlayer.Instance.transform.position = targetPos;
                     GorillaTagger.Instance.transform.position = targetPos;
-
                     GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
 
                     Noclipistuff(false);
@@ -413,14 +406,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             foreach (MeshCollider collider in Resources.FindObjectsOfTypeAll<MeshCollider>())
             {
-                if (b)
-                {
-                    collider.enabled = false;
-                }
-                else
-                {
-                    collider.enabled = true;
-                }
+                collider.enabled = !b;
             }
         }
 
@@ -440,9 +426,7 @@ namespace ShibaGTGenesisReborn.Mods
         private static void HandleHookHand(bool isRight)
         {
             bool vr = GunLib.IsXRDeviceActive();
-            bool pull = vr
-                ? (isRight ? InputHandler.Instance.RightTrigger.IsPressed : InputHandler.Instance.LeftTrigger.IsPressed)
-                : (isRight ? (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E) : (Mouse.current?.leftButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.Q));
+            bool pull = vr ? (isRight ? InputHandler.Instance.RightTrigger.IsPressed : InputHandler.Instance.LeftTrigger.IsPressed) : (isRight ? (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E) : (Mouse.current?.leftButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.Q));
 
             Transform hand = isRight ? GorillaTagger.Instance.rightHandTransform : GorillaTagger.Instance.leftHandTransform;
             ref GameObject hookObj = ref isRight ? ref hookRightObj : ref hookLeftObj;
@@ -454,9 +438,7 @@ namespace ShibaGTGenesisReborn.Mods
             {
                 if (!isHooked)
                 {
-                    Ray ray = vr
-                        ? new Ray(hand.position, -hand.up)
-                        : (Camera.main != null ? Camera.main.ScreenPointToRay(Mouse.current?.position.ReadValue() ?? Vector2.zero) : new Ray(hand.position, hand.forward));
+                    Ray ray = vr ? new Ray(hand.position, -hand.up) : (Camera.main != null ? Camera.main.ScreenPointToRay(Mouse.current?.position.ReadValue() ?? Vector2.zero) : new Ray(hand.position, hand.forward));
 
                     if (Physics.Raycast(ray, out RaycastHit hit, 100f, GunLib.BypassLayers))
                     {
@@ -578,6 +560,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             foreach (GorillaLocomotion.Gameplay.GorillaZipline zip in Object.FindObjectsByType<GorillaLocomotion.Gameplay.GorillaZipline>(FindObjectsSortMode.None))
             {
+                //if ()
                 if (zip.settings != null)
                 {
                     zip.settings.maxSpeed = speed;
@@ -713,11 +696,7 @@ namespace ShibaGTGenesisReborn.Mods
                 float distance = Vector3.Distance(GorillaLocomotion.GTPlayer.Instance.transform.position, targetPosition);
                 float followSpeed = Mathf.Max(12f, distance * 5f);
 
-                GorillaLocomotion.GTPlayer.Instance.transform.position = Vector3.MoveTowards(
-                    GorillaLocomotion.GTPlayer.Instance.transform.position,
-                    targetPosition,
-                    followSpeed * Time.deltaTime
-                );
+                GorillaLocomotion.GTPlayer.Instance.transform.position = Vector3.MoveTowards(GorillaLocomotion.GTPlayer.Instance.transform.position, targetPosition, followSpeed * Time.deltaTime);
                 GorillaTagger.Instance.transform.position = GorillaLocomotion.GTPlayer.Instance.transform.position;
                 GorillaLocomotion.GTPlayer.Instance.GetComponent<Rigidbody>().linearVelocity = Vector3.zero;
             }
@@ -750,13 +729,8 @@ namespace ShibaGTGenesisReborn.Mods
 
             bool isVr = GunLib.IsXRDeviceActive();
 
-            bool leftGripPressed = isVr
-                ? InputHandler.Instance.LeftGrip.IsPressed
-                : UnityInput.Current.GetKey(KeyCode.Q);
-
-            bool rightGripPressed = isVr
-                ? InputHandler.Instance.RightGrip.IsPressed
-                : (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E);
+            bool leftGripPressed = isVr ? InputHandler.Instance.LeftGrip.IsPressed : UnityInput.Current.GetKey(KeyCode.Q);
+            bool rightGripPressed = isVr ? InputHandler.Instance.RightGrip.IsPressed : (Mouse.current?.rightButton.isPressed ?? false) || UnityInput.Current.GetKey(KeyCode.E);
 
             if (leftGripPressed)
             {
@@ -919,13 +893,8 @@ namespace ShibaGTGenesisReborn.Mods
         public static void ZiplineGun()
         {
             bool isVr = GunLib.IsXRDeviceActive();
-            bool isAimingGun = isVr
-                ? InputHandler.Instance.RightGrip.IsPressed
-                : (Mouse.current?.rightButton.isPressed ?? false);
-
-            bool shootPressed = isVr
-                ? InputHandler.Instance.RightTrigger.IsPressed
-                : (Mouse.current?.leftButton.isPressed ?? false);
+            bool isAimingGun = isVr ? InputHandler.Instance.RightGrip.IsPressed : (Mouse.current?.rightButton.isPressed ?? false);
+            bool shootPressed = isVr ? InputHandler.Instance.RightTrigger.IsPressed : (Mouse.current?.leftButton.isPressed ?? false);
 
             GunLib.StartGun(() =>
             {
@@ -939,14 +908,7 @@ namespace ShibaGTGenesisReborn.Mods
                         hasActiveZipline = true;
                         ziplineCooldown = Time.time + 0.35f;
 
-                        ModsLib.CreateZiplineVisual(
-                            ziplineStartPosition,
-                            ziplineEndPosition,
-                            ref ziplineCableObject,
-                            ref ziplineLineRenderer,
-                            ref ziplineStartAnchor,
-                            ref ziplineEndAnchor
-                        );
+                        ModsLib.CreateZiplineVisual(ziplineStartPosition, ziplineEndPosition, ref ziplineCableObject, ref ziplineLineRenderer, ref ziplineStartAnchor, ref ziplineEndAnchor);
                     }
                 }
             }, false);
@@ -1005,14 +967,40 @@ namespace ShibaGTGenesisReborn.Mods
             isRidingZipline = false;
             wasZiplineShootPressed = false;
 
-            ModsLib.DestroyZiplineVisual(
-                ref ziplineCableObject,
-                ref ziplineLineRenderer,
-                ref ziplineStartAnchor,
-                ref ziplineEndAnchor
-            );
+            ModsLib.DestroyZiplineVisual(ref ziplineCableObject, ref ziplineLineRenderer, ref ziplineStartAnchor, ref ziplineEndAnchor);
 
             GunLib.CleanupPointer();
+        }
+
+        private static GorillaSurfaceOverride[] _cachedg;
+        private static float _cexpiry = -1f;
+        private static readonly List<(GorillaSurfaceOverride surface, float multiplier)> _saved = new List<(GorillaSurfaceOverride surface, float multiplier)>();
+
+        public static void SlipSlap()
+        {
+            if (Time.time > _cexpiry)
+            {
+                _cachedg = Object.FindObjectsByType<GorillaSurfaceOverride>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                _cexpiry = Time.time + 5f;
+            }
+
+            foreach (GorillaSurfaceOverride s in _cachedg)
+            {
+                float slide = s.slidePercentageOverride > 0f ? s.slidePercentageOverride : GTPlayer.Instance.materialData[s.overrideIndex].slidePercent;
+                if (slide <= 0f)
+                    continue;
+
+                _saved.Add((s, s.extraVelMultiplier));
+                s.extraVelMultiplier += slide;
+            }
+        }
+
+        public static void UnSlipSlap()
+        {
+            foreach (var (surface, multiplier) in _saved)
+                surface.extraVelMultiplier = multiplier;
+
+            _saved.Clear();
         }
     }
 }

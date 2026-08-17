@@ -13,10 +13,6 @@ namespace ShibaGTGenesisReborn.Mods
 {
     public partial class mods
     {
-        public static string _leavesName;
-        public static readonly List<GameObject> leaves = new List<GameObject>();
-        private static readonly Dictionary<string, GameObject> objectPool = new Dictionary<string, GameObject>();
-
         public static void TagGun()
         {
             GunLib.StartGun(() =>
@@ -27,12 +23,7 @@ namespace ShibaGTGenesisReborn.Mods
                 {
                     if (VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
                     {
-                        VRRig.LocalRig.enabled = false;
-                        VRRig.LocalRig.rightHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
-                        VRRig.LocalRig.leftHandTransform.position = GunLib.LockedPlayer.headConstraint.position;
-                        VRRig.LocalRig.transform.position = GunLib.LockedPlayer.headConstraint.position;
-                        GameMode.ReportTag(GunLib.LockedPlayer.Creator);
-                        VRRig.LocalRig.enabled = true;
+                        TagPlayer(GunLib.LockedPlayer);
                     }
                 }
             }, true);
@@ -42,21 +33,8 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!p.mainSkin.material.name.Contains("fected") && VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
             {
-                GorillaGameModes.GameMode.ReportTag(PhotonNetwork.CurrentRoom.GetPlayer(p.Creator.ActorNumber));
-
-                VRRig.LocalRig.enabled = false;
-                GorillaTagger.Instance.offlineVRRig.enabled = false;
-
-                GorillaTagger.Instance.offlineVRRig.rightHandTransform.position = p.bodyTransform.position;
-                GorillaTagger.Instance.offlineVRRig.leftHandTransform.position = p.bodyTransform.position;
-                GorillaTagger.Instance.offlineVRRig.transform.position = p.bodyTransform.position;
-
-                VRRig.LocalRig.transform.position = p.bodyTransform.position;
-                VRRig.LocalRig.leftHandTransform.position = p.bodyTransform.position;
-                VRRig.LocalRig.rightHandTransform.position = p.bodyTransform.position;
-
-                GorillaTagger.Instance.offlineVRRig.enabled = true;
-                VRRig.LocalRig.enabled = true;
+                bypasstp(p.bodyTransform.position, true);
+                GameMode.ReportTag(PhotonNetwork.CurrentRoom.GetPlayer(p.Creator.ActorNumber));
             }
         }
 
@@ -81,6 +59,9 @@ namespace ShibaGTGenesisReborn.Mods
             PlayerPrefs.Save();
         }
 
+        public static string _leavesName;
+        public static readonly List<GameObject> leaves = new List<GameObject>();
+        private static readonly Dictionary<string, GameObject> objectPool = new Dictionary<string, GameObject>();
         public static void removeleaves()
         {
             if (_leavesName == null)
@@ -144,6 +125,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             foreach (var l in leaves)
                 l.SetActive(true);
+
             leaves.Clear();
         }
 
@@ -174,7 +156,7 @@ namespace ShibaGTGenesisReborn.Mods
                     if (Vector3.Distance(localHead, targetHead) <= radius)
                     {
                         tagAuraCooldown = Time.time + 0.35f;
-                        TagPlayer(targetRig);
+                        GameMode.ReportTag(targetRig.Creator);
                         break;
                     }
                 }
@@ -182,7 +164,7 @@ namespace ShibaGTGenesisReborn.Mods
         }
 
         private static float tagAssistCooldown;
-        private static VRRig tagAssistTarget;
+        public static VRRig tagAssistTarget;
 
         public static void TagAssist(float assistRange = 8.5f, float pullSpeed = 22f)
         {
@@ -225,14 +207,9 @@ namespace ShibaGTGenesisReborn.Mods
                 if (closestDistance <= 4.5f && Time.time > tagAssistCooldown)
                 {
                     tagAssistCooldown = Time.time + 0.3f;
-                    TagPlayer(tagAssistTarget);
+                    GameMode.ReportTag(tagAssistTarget.Creator);
                 }
             }
-        }
-
-        public static void TagAssistDisable()
-        {
-            tagAssistTarget = null;
         }
     }
 }

@@ -205,7 +205,6 @@ namespace ShibaGTGenesisReborn.Mods
             SlideControl(0.00425f);
             AirSwimDisable();
             JesusMonkeDisable();
-            TagAssistDisable();
             ZiplineSpeed(10f);
             ResetStickyHands();
             FixHead();

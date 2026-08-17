@@ -73,6 +73,7 @@ namespace ShibaGTGenesisReborn.Mods
             catch { }
         }
 
+        /*
         public static void lbaction(GorillaPlayerLineButton.ButtonType type, NetPlayer player = null, bool? state = null)
         {
             if (type == GorillaPlayerLineButton.ButtonType.Mute)
@@ -97,6 +98,99 @@ namespace ShibaGTGenesisReborn.Mods
                         GorillaPlayerScoreboardLine.ReportPlayer(p.UserId, type, p.NickName);
             }
         }
+        */
+
+        public static void MutePlayer(NetPlayer player, bool shouldMute)
+        {
+            if (player == null || string.IsNullOrEmpty(player.UserId)) return;
+
+            int muteValue = shouldMute ? 1 : 0;
+            PlayerPrefs.SetInt(player.UserId, muteValue);
+            PlayerPrefs.Save();
+
+            if (VRRigCache.Instance != null && VRRigCache.Instance.TryGetVrrig(player, out RigContainer rigContainer) && rigContainer != null)
+            {
+                rigContainer.hasManualMute = true;
+                rigContainer.SetMuted(RigContainer.MuteReason.Manual, shouldMute);
+            }
+
+            GorillaScoreboardTotalUpdater.ReportMute(player, muteValue);
+
+            foreach (var line in GorillaScoreboardTotalUpdater.allScoreboardLines)
+            {
+                if (line.linePlayer == player && line.muteButton != null)
+                {
+                    line.muteButton.isOn = shouldMute;
+                    line.muteButton.UpdateColor();
+                }
+            }
+        }
+
+        public static void ReportPlayer(NetPlayer player)
+        {
+            if (player == null || string.IsNullOrEmpty(player.UserId)) return;
+
+            string targetNickName = player.NickName ?? player.DefaultName ?? "GORILLA";
+
+            GorillaPlayerScoreboardLine.ReportPlayer(player.UserId, GorillaPlayerLineButton.ButtonType.Cheating, targetNickName);
+
+            if (GorillaScoreboardTotalUpdater.hasInstance && player.ActorNumber != -1)
+            {
+                var updater = GorillaScoreboardTotalUpdater.instance;
+
+                if (updater.reportDict.TryGetValue(player.ActorNumber, out var existingReports))
+                {
+                    existingReports.cheating = true;
+                    existingReports.pressedReport = true;
+                    updater.reportDict[player.ActorNumber] = existingReports;
+                }
+                else
+                {
+                    updater.reportDict[player.ActorNumber] = new GorillaScoreboardTotalUpdater.PlayerReports
+                    {
+                        cheating = true,
+                        pressedReport = true
+                    };
+                }
+            }
+
+            foreach (var line in GorillaScoreboardTotalUpdater.allScoreboardLines)
+            {
+                if (line.linePlayer == player && line.reportButton != null)
+                {
+                    line.reportButton.isOn = true;
+                    line.reportButton.UpdateColor();
+                }
+            }
+        }
+
+        public static void lbaction(GorillaPlayerLineButton.ButtonType type, NetPlayer player = null, bool? state = null)
+        {
+            if (type == GorillaPlayerLineButton.ButtonType.Mute)
+            {
+                if (player != null)
+                {
+                    bool shouldMute = state ?? (PlayerPrefs.GetInt(player.UserId, 0) == 0);
+                    MutePlayer(player, shouldMute);
+                }
+                else
+                {
+                    foreach (NetPlayer otherPlayer in NetworkSystem.Instance.PlayerListOthers)
+                    {
+                        bool shouldMute = state ?? (PlayerPrefs.GetInt(otherPlayer.UserId, 0) == 0);
+                        MutePlayer(otherPlayer, shouldMute);
+                    }
+                }
+            }
+            else
+            {
+                if (player != null)
+                    ReportPlayer(player);
+                else
+                    foreach (NetPlayer otherPlayer in NetworkSystem.Instance.PlayerListOthers)
+                        ReportPlayer(otherPlayer);
+            }
+        }
 
         public static void MuteGun()
         {
@@ -115,21 +209,9 @@ namespace ShibaGTGenesisReborn.Mods
 
         private static Recorder GetActiveRecorder()
         {
-            if (NetworkSystem.Instance?.LocalRecorder != null)
-            {
-                return NetworkSystem.Instance.LocalRecorder;
-            }
-
-            if (NetworkSystem.Instance?.VoiceConnection?.PrimaryRecorder != null)
-            {
-                return NetworkSystem.Instance.VoiceConnection.PrimaryRecorder;
-            }
-
-            if (GorillaTagger.Instance?.myRecorder != null)
-            {
-                return GorillaTagger.Instance.myRecorder;
-            }
-
+            if (NetworkSystem.Instance?.LocalRecorder != null) return NetworkSystem.Instance.LocalRecorder;
+            if (NetworkSystem.Instance?.VoiceConnection?.PrimaryRecorder != null) return NetworkSystem.Instance.VoiceConnection.PrimaryRecorder;
+            if (GorillaTagger.Instance?.myRecorder != null) return GorillaTagger.Instance.myRecorder;
             return Object.FindFirstObjectByType<GTRecorder>() ?? (Recorder)Object.FindFirstObjectByType<Recorder>();
         }
 
@@ -137,10 +219,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
-            if (recorder == null)
-            {
-                return;
-            }
+            if (recorder == null) return;
 
             if (recorder is GTRecorder gtRecorder)
             {
@@ -156,10 +235,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
-            if (recorder == null)
-            {
-                return;
-            }
+            if (recorder == null) return;
 
             if (recorder is GTRecorder gtRecorder)
             {
@@ -175,10 +251,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
-            if (recorder == null)
-            {
-                return;
-            }
+            if (recorder == null) return;
 
             if (recorder is GTRecorder gtRecorder)
             {
@@ -199,10 +272,7 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
-            if (recorder == null)
-            {
-                return;
-            }
+            if (recorder == null) return;
 
             if (recorder is GTRecorder gtRecorder)
             {
@@ -233,17 +303,10 @@ namespace ShibaGTGenesisReborn.Mods
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
-            if (recorder == null)
-            {
-                return;
-            }
+            if (recorder == null) return;
 
             recorder.DebugEchoMode = enable;
-
-            if (enable && !recorder.TransmitEnabled)
-            {
-                recorder.TransmitEnabled = true;
-            }
+            if (enable && !recorder.TransmitEnabled) recorder.TransmitEnabled = true;
         }
 
         public static void SetMicrophonePitch(float pitch)
