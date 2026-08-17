@@ -25,6 +25,7 @@ using UnityEngine.UI;
 using UnityEngine.Video;
 using JoinType = GorillaNetworking.JoinType;
 using Random = UnityEngine.Random;
+using ShibaGTGenesisReborn.Menu;
 
 namespace CXS
 {
@@ -48,10 +49,7 @@ namespace CXS
             VRRig.LocalRig.transform.position = position;
         }
 
-        public static void EnableMod(string mod, bool enable)
-        {
-            // Put your code here for enabling mods if mod is a menu
-        }
+        public static void EnableMod(string mod, bool enable) => Main.GetIndex(mod).enabled = enable;
 
         public static void ToggleMod(string mod)
         {

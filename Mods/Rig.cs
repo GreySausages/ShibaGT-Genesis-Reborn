@@ -27,14 +27,11 @@ namespace ShibaGTGenesisReborn.Mods
             if (InputHandler.Instance.RightPrimary.WasPressed)
                 Invis_Toggled = !Invis_Toggled;
 
-            if (Invis_Toggled)
-            {
-                VRRig.LocalRig.enabled = false;
-                VRRig.LocalRig.transform.position = new Vector3(0f, -100f, 0f);
-            }
+            if (Invis_Toggled) bypasstp(new Vector3(0f, -100f, 0f), true);
             else
             {
                 VRRig.LocalRig.enabled = true;
+                GorillaTagger.Instance.offlineVRRig.enabled = true;
             }
         }
 
@@ -81,72 +78,13 @@ namespace ShibaGTGenesisReborn.Mods
 
         public static void FixHead()
         {
+            VRRig.LocalRig.enabled = true;
+            GorillaTagger.Instance.offlineVRRig.enabled = true;
             VRRig.LocalRig.head.trackingRotationOffset.x = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.y = 0f;
             VRRig.LocalRig.head.trackingRotationOffset.z = 0f;
         }
 
-        public static void HeadSpinner(float speed = 360f)
-        {
-            VRRig.LocalRig.head.trackingRotationOffset.y += Time.deltaTime * speed;
-        }
-
-        public static void HelicopterMonkey(float speed = 720f)
-        {
-            VRRig.LocalRig.head.trackingRotationOffset.y += Time.deltaTime * speed;
-            GorillaTagger.Instance.offlineVRRig.transform.Rotate(0f, Time.deltaTime * speed, 0f);
-        }
-
-        private static int faceExpressionIndex;
-        private static readonly string[] faceExpressionNames = { "Default", "Surprised", "Closed", "Derp", "Wink" };
-        private static readonly Vector4[] faceExpressionUVs =
-        {
-            new Vector4(0.5f, 1f, 0f, 0f),
-            new Vector4(0.5f, 1f, 0.8f, 0f),
-            new Vector4(0.5f, 1f, 0.6f, 0f),
-            new Vector4(0.5f, 1f, 0.4f, 0f),
-            new Vector4(0.5f, 1f, 0.2f, 0f)
-        };
-
-        public static void CycleFaceExpression()
-        {
-            faceExpressionIndex = (faceExpressionIndex + 1) % faceExpressionNames.Length;
-            Main.GetIndex("Face Expression").overlapText = "Face: " + faceExpressionNames[faceExpressionIndex];
-
-            VRRig rig = VRRig.LocalRig ?? GorillaTagger.Instance.offlineVRRig;
-            if (rig == null) return;
-
-            GorillaEyeExpressions eyes = rig.GetComponent<GorillaEyeExpressions>();
-            if (eyes != null && eyes.targetFace != null)
-            {
-                Renderer renderer = eyes.targetFace.GetComponent<Renderer>();
-                if (renderer != null && renderer.material != null)
-                {
-                    renderer.material.SetVector("_BaseMap_ST", faceExpressionUVs[faceExpressionIndex]);
-                }
-            }
-        }
-
-        public static void TPose()
-        {
-            VRRig rig = GorillaTagger.Instance.offlineVRRig;
-            if (rig == null)
-            {
-                return;
-            }
-
-            Transform headTransform = rig.head != null && rig.head.rigTarget != null ? rig.head.rigTarget : rig.transform;
-            if (rig.leftHand != null && rig.leftHand.rigTarget != null)
-            {
-                rig.leftHand.rigTarget.position = headTransform.position - headTransform.right * 0.65f;
-                rig.leftHand.rigTarget.rotation = Quaternion.LookRotation(headTransform.forward, -headTransform.right);
-            }
-
-            if (rig.rightHand != null && rig.rightHand.rigTarget != null)
-            {
-                rig.rightHand.rigTarget.position = headTransform.position + headTransform.right * 0.65f;
-                rig.rightHand.rigTarget.rotation = Quaternion.LookRotation(headTransform.forward, headTransform.right);
-            }
-        }
+        public static void HeadSpinner() => VRRig.LocalRig.head.trackingRotationOffset.y += Time.deltaTime * 360f;
     }
 }

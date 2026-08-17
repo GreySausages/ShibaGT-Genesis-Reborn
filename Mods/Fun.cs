@@ -4,6 +4,7 @@ using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
 using UnityEngine;
 using Object = UnityEngine.Object;
+using CXS;
 
 namespace ShibaGTGenesisReborn.Mods
 {
@@ -52,42 +53,31 @@ namespace ShibaGTGenesisReborn.Mods
         public static void SplashGun()
         {
             if (!NetworkSystem.Instance.InRoom) return;
-
             GunLib.StartGun(() =>
             {
                 if (Time.time > splashGunDelay)
                 {
                     splashGunDelay = Time.time + 0.15f;
+
                     Vector3 targetPos = GunLib.GetPointerPos();
                     if (targetPos != Vector3.zero)
                     {
+                        if ((GorillaTagger.Instance.bodyCollider.transform.position - targetPos).sqrMagnitude >= 8.5f)
+                        {
+                            bypasstp(targetPos, true);
+                        }
+
                         GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { targetPos, Quaternion.identity, 4f, 100f, false, true });
+
+                        if (VRRig.LocalRig != null)
+                            VRRig.LocalRig.enabled = true;
+                        if (GorillaTagger.Instance.offlineVRRig != null)
+                            GorillaTagger.Instance.offlineVRRig.enabled = true;
+
                         RPCProt();
                     }
                 }
             }, false);
-        }
-
-        private static float splashRightDelay;
-        private static float splashLeftDelay;
-
-        public static void SplashHands()
-        {
-            if (!NetworkSystem.Instance.InRoom) return;
-
-            if (InputHandler.Instance.RightGrip.IsPressed && Time.time > splashRightDelay)
-            {
-                splashRightDelay = Time.time + 0.15f;
-                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.rightHandTransform.position, GorillaTagger.Instance.rightHandTransform.rotation, 4f, 100f, false, true });
-                RPCProt();
-            }
-
-            if (InputHandler.Instance.LeftGrip.IsPressed && Time.time > splashLeftDelay)
-            {
-                splashLeftDelay = Time.time + 0.15f;
-                GorillaTagger.Instance.myVRRig.SendRPC("RPC_PlaySplashEffect", RpcTarget.All, new object[] { GorillaTagger.Instance.leftHandTransform.position, GorillaTagger.Instance.leftHandTransform.rotation, 4f, 100f, false, true });
-                RPCProt();
-            }
         }
 
         public static void BraceletSpam()

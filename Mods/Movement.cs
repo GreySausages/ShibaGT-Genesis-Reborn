@@ -192,6 +192,75 @@ namespace ShibaGTGenesisReborn.Mods
             }
         }
 
+        public static void bypasstp(Vector3 position, bool tprig = false)
+        {
+            if (tprig)
+            {
+                if (GorillaTagger.Instance != null && GorillaTagger.Instance.offlineVRRig != null && VRRig.LocalRig != null)
+                {
+                    GorillaTagger.Instance.offlineVRRig.enabled = false;
+                    GorillaTagger.Instance.offlineVRRig.transform.position = position;
+                    if (GorillaTagger.Instance.offlineVRRig.rightHandTransform != null)
+                        GorillaTagger.Instance.offlineVRRig.rightHandTransform.position = position;
+                    if (GorillaTagger.Instance.offlineVRRig.leftHandTransform != null)
+                        GorillaTagger.Instance.offlineVRRig.leftHandTransform.position = position;
+
+                    VRRig.LocalRig.enabled = false;
+                    VRRig.LocalRig.transform.position = position;
+                    if (VRRig.LocalRig.rightHandTransform != null)
+                        VRRig.LocalRig.rightHandTransform.position = position;
+                    if (VRRig.LocalRig.leftHandTransform != null)
+                        VRRig.LocalRig.leftHandTransform.position = position;
+                }
+                return;
+            }
+
+            Noclipistuff(true);
+
+            Vector3 headOffset = GorillaTagger.Instance.headCollider.transform.position - GTPlayer.Instance.transform.position;
+            Vector3 targetPlayerPos = position - headOffset;
+
+            GTPlayer.Instance.transform.position = targetPlayerPos;
+            GorillaTagger.Instance.transform.position = targetPlayerPos;
+
+            if (GTPlayer.Instance.playerRigidBody != null)
+            {
+                GTPlayer.Instance.playerRigidBody.position = targetPlayerPos;
+                GTPlayer.Instance.playerRigidBody.linearVelocity = Vector3.zero;
+            }
+
+            if (GorillaTagger.Instance.rigidbody != null)
+            {
+                GorillaTagger.Instance.rigidbody.position = targetPlayerPos;
+                GorillaTagger.Instance.rigidbody.linearVelocity = Vector3.zero;
+            }
+
+            GTPlayer.Instance.lastPosition = targetPlayerPos;
+            GTPlayer.Instance.lastHeadPosition = position;
+            GTPlayer.Instance.lastOpenHeadPosition = position;
+
+            GTPlayer.Instance.ClearHandHolds();
+            GTPlayer.Instance.leftHand.OnTeleport();
+            GTPlayer.Instance.rightHand.OnTeleport();
+
+            if (GorillaTagger.Instance.offlineVRRig != null)
+            {
+                GorillaTagger.Instance.offlineVRRig.transform.position = targetPlayerPos;
+                GorillaTagger.Instance.offlineVRRig.leftHandLink?.BreakLink();
+                GorillaTagger.Instance.offlineVRRig.rightHandLink?.BreakLink();
+            }
+
+            if (VRRig.LocalRig != null)
+            {
+                VRRig.LocalRig.transform.position = targetPlayerPos;
+            }
+
+            Physics.SyncTransforms();
+            GTPlayer.Instance.ForceRigidBodySync();
+
+            Noclipistuff(false);
+        }
+
         public static void PullMod()
         {
             bool leftTouch = GTPlayer.Instance.IsHandTouching(true);

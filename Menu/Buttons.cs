@@ -136,6 +136,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Fix Microphone", method =() => mods.FixMicrophone(), isTogglable = false, toolTip = "Reset and repair microphone settings"},
                 new ButtonInfo { buttonText = "Hear Self", method =() => mods.HearSelf(true), disableMethod =() => mods.HearSelf(false), isTogglable = true, toolTip = "Hear your own microphone live to test audio"},
                 new ButtonInfo { buttonText = "Waterbend", method =() => mods.WaterSplash(), isTogglable = true, toolTip = "Splash water around hands"},
+                new ButtonInfo { buttonText = "Splash Gun", method =() => mods.SplashGun(), isTogglable = true, toolTip = "Shoot water splashes at pointer"},
                 new ButtonInfo { buttonText = "Bracelet Spam", method =() => mods.BraceletSpam(), disableMethod =() => mods.NoBracelet(), isTogglable = true, toolTip = "Spam friend bracelets"},
                 new ButtonInfo { buttonText = "Networking Library", enableMethod =() => NetworkingLibrary.Instance.NetworkEnabled = true, disableMethod =() => NetworkingLibrary.Instance.NetworkEnabled = false, toolTip = "Toggle custom networking", enabled = !NetworkingLibrary.Instance.NetworkEnabled },
                 new ButtonInfo { buttonText = "Boombox", method = () => BoomboxManager.BoomboxLoop("https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/212302951.obj", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/boomboxmesh.png"), disableMethod = () => BoomboxManager.Kill(), isTogglable = true, toolTip = "Spawn boombox"},
@@ -150,13 +151,12 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Visualizer Base Scale +", method = () => BoomboxManager.BaseScale = Mathf.Clamp(BoomboxManager.BaseScale + 1f, 0.1f, 10f), isTogglable = false, toolTip = "Wider bars"},
                 new ButtonInfo { buttonText = "Visualizer Base Scale -", method = () => BoomboxManager.BaseScale = Mathf.Clamp(BoomboxManager.BaseScale - 1f, 0.1f, 10f), isTogglable = false, toolTip = "Narrower bars"},
                 new ButtonInfo { buttonText = "Grosh Holdable", method = () => GroshHolder.GroshLoop("https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/Grosh.Holdable.obj", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/iidktexture.png?raw=true"), disableMethod = () => GroshHolder.Kill(), isTogglable = true, toolTip = "Hold Grosh"},
+                new ButtonInfo { buttonText = "Maxwell Holdable", enableMethod = () => MaxwellHolder.DownloadAssets(), method = () => MaxwellHolder.CatLoop(), disableMethod = () => MaxwellHolder.Kill(), isTogglable = true, toolTip = "Hold Maxwell"},
                 new ButtonInfo { buttonText = "Triple T Holdable", method = () => SusTung.TungShooter("https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/TungTungTungSahur.obj", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/shaded.png", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/tungtung.wav"), disableMethod = () => SusTung.Kill(), isTogglable = true, toolTip = "Hold Tung"},
                 new ButtonInfo { buttonText = "Fat Seal Spammer", method = () => FatSealSpammer.SealLoop("https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/fatseal.obj", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/fatseal.jpeg"), disableMethod = () => FatSealSpammer.Kill(), isTogglable = true, toolTip = "Spawn seals"},
                 new ButtonInfo { buttonText = "Vape", method = () => Vape.InitVape("https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/juul.obj", "https://raw.githubusercontent.com/GreySausages/ShibaGT-Genesis-Reborn/main/Menu/Custom/files/JUUL_BOI_Color.png?raw=true"), disableMethod = () => Vape.Kill(), isTogglable = true, toolTip = "Hold vape"},
                 new ButtonInfo { buttonText = "Stun Grenade (LOUD)", method = () => StunGrenadeManager.StunLoop(), disableMethod = () => StunGrenadeManager.Kill(), isTogglable = true, toolTip = "Press RG to hold grenade, release to throw (3s timer)"},
                 new ButtonInfo { buttonText = "Bomb (LOUD)", method = () => BombManager.BombLoop(), disableMethod = () => BombManager.Kill(), isTogglable = true, toolTip = "Press RG to spawn a bomb (3s fuse)"},
-                new ButtonInfo { buttonText = "Splash Gun", method =() => mods.SplashGun(), isTogglable = true, toolTip = "Shoot water splashes at pointer"},
-                new ButtonInfo { buttonText = "Splash Hands", method =() => mods.SplashHands(), isTogglable = true, toolTip = "Hold grips to splash water from hands"},
             },
 
             new ButtonInfo[]
@@ -207,9 +207,6 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo{ buttonText = "Broken Neck", method =() => VRRig.LocalRig.head.trackingRotationOffset.z = 90f, disableMethod =() => mods.FixHead(), isTogglable = true, toolTip = "broken neck"},
                 new ButtonInfo{ buttonText = "Backwards Head", method =() => VRRig.LocalRig.head.trackingRotationOffset.y = 180f, disableMethod =() => mods.FixHead(), isTogglable = true, toolTip = "backwards head"},
                 new ButtonInfo{ buttonText = "Head Spinner", method =() => mods.HeadSpinner(), disableMethod =() => mods.FixHead(), isTogglable = true, toolTip = "Spin head continuously"},
-                new ButtonInfo{ buttonText = "Helicopter Monkey", method =() => mods.HelicopterMonkey(), disableMethod =() => mods.FixHead(), isTogglable = true, toolTip = "Spin rig rapidly"},
-                new ButtonInfo{ buttonText = "Face Expression", overlapText = "Face: Default", method =() => mods.CycleFaceExpression(), isTogglable = false, toolTip = "Cycle facial expressions"},
-                new ButtonInfo{ buttonText = "T-Pose", method =() => mods.TPose(), isTogglable = true, toolTip = "T-pose your monkey rig"},
             },
 
             new ButtonInfo[]

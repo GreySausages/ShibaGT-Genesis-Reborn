@@ -753,6 +753,10 @@ namespace ShibaGTGenesisReborn.Libs
                 GroshHolder.Obj.GetInstanceID().ToString() == objectId)
                 return GroshHolder.Obj;
             
+            if (MaxwellHolder.Obj != null &&
+                MaxwellHolder.Obj.GetInstanceID().ToString() == objectId)
+                return MaxwellHolder.Obj;
+            
             if (Vape.Obj != null && 
                 Vape.Obj.GetInstanceID().ToString() == objectId)
                 return Vape.Obj;
