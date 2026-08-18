@@ -100,7 +100,7 @@ namespace ShibaGTGenesisReborn.Mods
         public static void PlatColorChange()
         {
             Platcolor = (Platcolor + 1) % PlatColors.Length;
-            Main.GetIndex("Change Plat Color").overlapText = "Plat Color: " + ColorNames[Platcolor];
+            Main.GetIndex("pltclr").overlapText = "Plat Color: " + ColorNames[Platcolor];
             PlatColor = PlatColors[Platcolor];
         }
 

@@ -3,7 +3,7 @@ param(
     [string]$m
 )
 
-Remove-Item -Recurse -Force .\obj, .\bin -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force .\obj, .\bin, .\artifacts -ErrorAction SilentlyContinue
 
 git add .
 git commit -m $m

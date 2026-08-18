@@ -6,6 +6,7 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 using CXS;
 using System.Collections.Generic;
+using GorillaTagScripts;
 
 namespace ShibaGTGenesisReborn.Mods
 {

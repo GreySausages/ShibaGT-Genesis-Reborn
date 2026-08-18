@@ -49,7 +49,7 @@ namespace ShibaGTGenesisReborn.Mods
             NetworkSystem.Instance.currentRegionIndex = Array.IndexOf(NetworkSystem.Instance.regionNames, region);
         }
 
-        public static void RPCProt()
+        public static void RPCProt(bool experimental = false)
         {
             if (!NetworkSystem.Instance.InRoom) return;
             try
@@ -59,15 +59,7 @@ namespace ShibaGTGenesisReborn.Mods
                     MonkeAgent.instance.rpcErrorMax = int.MaxValue;
                     MonkeAgent.instance.rpcCallLimit = int.MaxValue;
                     MonkeAgent.instance.logErrorMax = int.MaxValue;
-                    MonkeAgent.instance.logErrorCount = 0;
                     MonkeAgent.instance.userDecayTime = 0f;
-                    // MonkeAgent.instance.lastCheck = float.MaxValue;
-                    // MonkeAgent.instance.reportCheckCooldown = float.MaxValue;
-                    // MonkeAgent.instance.testAssault = false;
-                    // MonkeAgent.instance._sendReport = false;
-                    // MonkeAgent.instance._suspiciousPlayerId = "";
-                    // MonkeAgent.instance._suspiciousPlayerName = "";
-                    // MonkeAgent.instance._suspiciousReason = "";
 
                     MonkeAgent.instance.reportedPlayers?.Clear();
                     MonkeAgent.instance.userRPCCalls?.Clear();
@@ -79,50 +71,28 @@ namespace ShibaGTGenesisReborn.Mods
                 PhotonNetwork.MaxResendsBeforeDisconnect = int.MaxValue;
                 PhotonNetwork.QuickResends = int.MaxValue;
 
-                /*
-                if (PhotonNetwork.NetworkingClient != null && PhotonNetwork.NetworkingClient.LoadBalancingPeer != null)
+                if (experimental)
                 {
-                    PhotonNetwork.NetworkingClient.LoadBalancingPeer.DisconnectTimeout = 60000;
-                    PhotonNetwork.NetworkingClient.LoadBalancingPeer.SentCountAllowance = int.MaxValue;
-                }
+                    MonkeAgent.instance.logErrorCount = 0;
+                    MonkeAgent.instance.lastCheck = float.MaxValue;
+                    MonkeAgent.instance.reportCheckCooldown = float.MaxValue;
+                    MonkeAgent.instance.testAssault = false;
+                    MonkeAgent.instance._sendReport = false;
+                    MonkeAgent.instance._suspiciousPlayerId = "";
+                    MonkeAgent.instance._suspiciousPlayerName = "";
+                    MonkeAgent.instance._suspiciousReason = "";
 
-                if (GorillaScoreboardTotalUpdater.instance != null && GorillaScoreboardTotalUpdater.instance.reportDict != null)
-                {
-                    GorillaScoreboardTotalUpdater.instance.reportDict.Clear();
-                }
+                    if (PhotonNetwork.NetworkingClient != null && PhotonNetwork.NetworkingClient.LoadBalancingPeer != null)
+                    {
+                        PhotonNetwork.NetworkingClient.LoadBalancingPeer.DisconnectTimeout = 60000;
+                        PhotonNetwork.NetworkingClient.LoadBalancingPeer.SentCountAllowance = int.MaxValue;
+                    }
 
-                while (GorillaTelemetry.telemetryEventsQueueMothership != null && GorillaTelemetry.telemetryEventsQueueMothership.TryDequeue(out _)) { }
-                */
+                    while (GorillaTelemetry.telemetryEventsQueueMothership != null && GorillaTelemetry.telemetryEventsQueueMothership.TryDequeue(out _)) { }
+                }
             }
             catch { /* if it goes here its a skill issue */ }
         }
-
-        /*
-        public static void lbaction(GorillaPlayerLineButton.ButtonType type, NetPlayer player = null, bool? state = null)
-        {
-            if (type == GorillaPlayerLineButton.ButtonType.Mute)
-            {
-                foreach (var line in GorillaScoreboardTotalUpdater.allScoreboardLines)
-                {
-                    if (player == null ? (state == true ? !line.muteButton.isAutoOn : line.muteButton.isAutoOn) : line.linePlayer == player)
-                    {
-                        bool on = state ?? !line.muteButton.isOn;
-                        line.muteButton.isOn = on;
-                        line.PressButton(on, GorillaPlayerLineButton.ButtonType.Mute);
-                        if (player != null) break;
-                    }
-                }
-            }
-            else
-            {
-                if (player != null)
-                    GorillaPlayerScoreboardLine.ReportPlayer(player.UserId, type, player.NickName);
-                else
-                    foreach (var p in NetworkSystem.Instance.PlayerListOthers)
-                        GorillaPlayerScoreboardLine.ReportPlayer(p.UserId, type, p.NickName);
-            }
-        }
-        */
 
         public static void MutePlayer(NetPlayer player, bool shouldMute)
         {
