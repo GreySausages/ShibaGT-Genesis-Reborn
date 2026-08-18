@@ -1,8 +1,11 @@
+using System;
 using System.Collections.Generic;
 using GorillaLocomotion;
+using HarmonyLib;
 using Photon.Pun;
 using Photon.Realtime;
 using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
 using UnityEngine;
 using Object = UnityEngine.Object;
@@ -167,11 +170,47 @@ namespace ShibaGTGenesisReborn.Mods
             }
         }
 
-        public static string PlayerPlatform(Player p)
+        public static bool IsSteamUser(VRRig rig, Player player)
         {
-            p.CustomProperties.TryGetValue("platform", out object v);
-            if (v == null) { v = "Quest"; }
-            return v.ToString();
+            if (player != null && player.CustomProperties != null)
+            {
+                if (player.CustomProperties.TryGetValue("platform", out object platObj) && platObj != null)
+                {
+                    string platStr = platObj.ToString();
+                    if (platStr.IndexOf("steam", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return true;
+                    if (platStr.IndexOf("quest", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        platStr.IndexOf("oculus", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        platStr.IndexOf("meta", StringComparison.OrdinalIgnoreCase) >= 0)
+                        return false;
+                }
+
+                if (player.CustomProperties.Count >= 2)
+                    return true;
+            }
+
+            if (rig != null)
+            {
+                try
+                {
+                    var cosmeticsField = AccessTools.Field(rig.GetType(), "_playerOwnedCosmetics");
+                    if (cosmeticsField != null)
+                    {
+                        var cosmetics = cosmeticsField.GetValue(rig) as HashSet<string>;
+                        if (cosmetics != null)
+                        {
+                            string concat = string.Concat(cosmetics);
+                            if (concat.Contains("S. FIRST LOGIN") || concat.Contains("FIRST LOGIN"))
+                                return true;
+                            if (concat.Contains("LMAKT."))
+                                return false;
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            return false;
         }
 
         public static void NameAndDistanceTags()
@@ -179,13 +218,15 @@ namespace ShibaGTGenesisReborn.Mods
             Camera cam = Camera.main != null ? Camera.main : GorillaTagger.Instance.mainCamera.GetComponent<Camera>();
             foreach (VRRig rig in VRRigCache.ActiveRigs)
             {
-                if (rig == null || rig.isOfflineVRRig)
-                    continue;
+                if (rig == null || rig.isOfflineVRRig) continue;
+                
+                Player player = null;
+                if (rig.Creator != null)
+                    player = PhotonNetwork.CurrentRoom?.GetPlayer(rig.Creator.ActorNumber);
 
-                string name = rig.Creator != null ? rig.Creator.NickName : rig.playerNameVisible;
+                string name = player != null ? player.NickName : (!string.IsNullOrEmpty(rig.playerNameVisible) ? rig.playerNameVisible : "Player");
                 float dist = Vector3.Distance(GorillaTagger.Instance.bodyCollider.transform.position, rig.transform.position);
                 int fps = rig.fps;
-                string platform = PlayerPlatform(RigManager.GetPlayerFromVRRig(rig));
 
                 GameObject tagObj = new GameObject("NameTagESP");
                 Vector3 headPos = (rig.headConstraint != null ? rig.headConstraint.position : rig.transform.position) + Vector3.up * 0.35f;
@@ -194,12 +235,33 @@ namespace ShibaGTGenesisReborn.Mods
                     tagObj.transform.LookAt(tagObj.transform.position + cam.transform.rotation * Vector3.forward, cam.transform.rotation * Vector3.up);
 
                 TextMesh tm = tagObj.AddComponent<TextMesh>();
-                tm.text = $"{name} [{dist:F1}m] (FPS: {fps}) [Platform: {platform}]";
-                tm.fontSize = 24;
+                tm.text = $"{name} [{dist:F1}m] [{fps} FPS]";
+                tm.fontSize = 42;
                 tm.characterSize = 0.02f;
                 tm.alignment = TextAlignment.Center;
                 tm.anchor = TextAnchor.MiddleCenter;
                 tm.color = rig.playerColor;
+
+                bool isSteam = IsSteamUser(rig, player);
+                Material platformMat = isSteam ? ModsLib.GetSteamMaterial() : ModsLib.GetMetaMaterial();
+
+                if (platformMat != null)
+                {
+                    GameObject platformQuad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                    Object.Destroy(platformQuad.GetComponent<Collider>());
+                    platformQuad.name = isSteam ? "SteamPlatformQuad" : "MetaPlatformQuad";
+                    platformQuad.transform.SetParent(tagObj.transform, false);
+                    platformQuad.transform.localPosition = new Vector3(0f, 0.12f, 0f);
+                    platformQuad.transform.localRotation = Quaternion.identity;
+                    platformQuad.transform.localScale = new Vector3(0.24f, 0.24f, 1f);
+
+                    Renderer quadRenderer = platformQuad.GetComponent<Renderer>();
+                    if (quadRenderer != null)
+                    {
+                        quadRenderer.sharedMaterial = platformMat;
+                    }
+                }
+
                 Object.Destroy(tagObj, Time.deltaTime);
             }
         }
@@ -220,10 +282,19 @@ namespace ShibaGTGenesisReborn.Mods
             Object.Destroy(obj, Time.deltaTime);
         }
 
-        private static int cursedIndex;
+        private struct MaterialState
+        {
+            public Shader OriginalShader;
+            public Color OriginalColor;
+            public bool HasColor;
+            public Color OriginalBaseColor;
+            public bool HasBaseColor;
+        }
+
+        private static int cursedIndex = 4;
         private static readonly string[] cursedNames = { "Void", "Glitch", "Blood", "Acid", "Off" };
-        private static readonly Dictionary<Renderer, Shader> originalRendererShaders = new Dictionary<Renderer, Shader>();
-        private static readonly Dictionary<Renderer, Color> originalRendererColors = new Dictionary<Renderer, Color>();
+        private static readonly Dictionary<Material, MaterialState> originalMaterialStates = new Dictionary<Material, MaterialState>();
+        private static bool originalFog;
         private static Color originalFogColor;
         private static Color originalAmbientLight;
         private static bool savedLighting;
@@ -231,10 +302,16 @@ namespace ShibaGTGenesisReborn.Mods
         public static void CursedGTAG()
         {
             cursedIndex = (cursedIndex + 1) % cursedNames.Length;
-            Main.GetIndex("cursedgtag").overlapText = "Cursed: " + cursedNames[cursedIndex];
+
+            ButtonInfo cursedBtn = Main.GetIndex("cursedgtag");
+            if (cursedBtn != null)
+            {
+                cursedBtn.overlapText = "Cursed: " + cursedNames[cursedIndex];
+            }
 
             if (!savedLighting)
             {
+                originalFog = RenderSettings.fog;
                 originalFogColor = RenderSettings.fogColor;
                 originalAmbientLight = RenderSettings.ambientLight;
                 savedLighting = true;
@@ -246,6 +323,7 @@ namespace ShibaGTGenesisReborn.Mods
                 if (BetterDayNightManager.instance != null)
                 {
                     BetterDayNightManager.instance.UnsetTimeIndexOverrideFunction();
+                    BetterDayNightManager.instance.ClearTimeOfDay(true);
                     BetterDayNightManager.instance.UpdateTimeOfDay(true);
                 }
                 return;
@@ -256,47 +334,63 @@ namespace ShibaGTGenesisReborn.Mods
 
         private static void ApplyCursedShaders(int mode)
         {
-            Shader textShader = Shader.Find("GUI/Text Shader");
-            Shader spritesShader = Shader.Find("Sprites/Default");
-            Shader unlitShader = Shader.Find("UI/Default") ?? Shader.Find("Standard");
+            Shader textShader = Shader.Find("GUI/Text Shader") ?? Shader.Find("Sprites/Default");
+            Shader spritesShader = Shader.Find("Sprites/Default") ?? Shader.Find("GUI/Text Shader");
+            Shader unlitShader = Shader.Find("UI/Default") ?? Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Standard");
 
             Renderer[] allRenderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
 
             for (int i = 0; i < allRenderers.Length; i++)
             {
                 Renderer renderer = allRenderers[i];
-                if (renderer == null || renderer.sharedMaterial == null)
+                if (renderer == null)
                     continue;
 
-                if (!originalRendererShaders.ContainsKey(renderer))
-                {
-                    originalRendererShaders[renderer] = renderer.sharedMaterial.shader;
-                    if (renderer.sharedMaterial.HasProperty("_Color"))
-                        originalRendererColors[renderer] = renderer.sharedMaterial.color;
-                }
+                Material[] materials = renderer.sharedMaterials;
+                if (materials == null)
+                    continue;
 
-                switch (mode)
+                for (int m = 0; m < materials.Length; m++)
                 {
-                    case 0:
-                        renderer.sharedMaterial.shader = textShader;
-                        if (renderer.sharedMaterial.HasProperty("_Color"))
-                            renderer.sharedMaterial.color = new Color(0f, 0f, 0f, 0.9f);
-                        break;
-                    case 1:
-                        renderer.sharedMaterial.shader = (i % 2 == 0) ? textShader : spritesShader;
-                        if (renderer.sharedMaterial.HasProperty("_Color"))
-                            renderer.sharedMaterial.color = (i % 3 == 0) ? Color.magenta : ((i % 2 == 0) ? Color.cyan : Color.yellow);
-                        break;
-                    case 2:
-                        renderer.sharedMaterial.shader = textShader;
-                        if (renderer.sharedMaterial.HasProperty("_Color"))
-                            renderer.sharedMaterial.color = new Color(0.8f, 0f, 0f, 0.85f);
-                        break;
-                    case 3:
-                        renderer.sharedMaterial.shader = unlitShader;
-                        if (renderer.sharedMaterial.HasProperty("_Color"))
-                            renderer.sharedMaterial.color = Color.HSVToRGB((i * 0.05f) % 1f, 1f, 1f);
-                        break;
+                    Material material = materials[m];
+                    if (material == null)
+                        continue;
+
+                    if (!originalMaterialStates.ContainsKey(material))
+                    {
+                        originalMaterialStates[material] = new MaterialState
+                        {
+                            OriginalShader = material.shader,
+                            OriginalColor = material.HasProperty("_Color") ? material.color : Color.white,
+                            HasColor = material.HasProperty("_Color"),
+                            OriginalBaseColor = material.HasProperty("_BaseColor") ? material.GetColor("_BaseColor") : Color.white,
+                            HasBaseColor = material.HasProperty("_BaseColor")
+                        };
+                    }
+
+                    switch (mode)
+                    {
+                        case 0:
+                            material.shader = textShader;
+                            if (material.HasProperty("_Color"))
+                                material.color = new Color(0f, 0f, 0f, 0.9f);
+                            break;
+                        case 1:
+                            material.shader = (i % 2 == 0) ? textShader : spritesShader;
+                            if (material.HasProperty("_Color"))
+                                material.color = (i % 3 == 0) ? Color.magenta : ((i % 2 == 0) ? Color.cyan : Color.yellow);
+                            break;
+                        case 2:
+                            material.shader = textShader;
+                            if (material.HasProperty("_Color"))
+                                material.color = new Color(0.8f, 0f, 0f, 0.85f);
+                            break;
+                        case 3:
+                            material.shader = unlitShader;
+                            if (material.HasProperty("_Color"))
+                                material.color = Color.HSVToRGB((i * 0.05f) % 1f, 1f, 1f);
+                            break;
+                    }
                 }
             }
 
@@ -335,23 +429,38 @@ namespace ShibaGTGenesisReborn.Mods
 
         private static void FixShaders()
         {
-            foreach (var pair in originalRendererShaders)
+            foreach (KeyValuePair<Material, MaterialState> pair in originalMaterialStates)
             {
-                if (pair.Key != null && pair.Key.sharedMaterial != null)
+                Material material = pair.Key;
+                MaterialState state = pair.Value;
+
+                if (material == null)
+                    continue;
+
+                if (state.OriginalShader != null)
                 {
-                    pair.Key.sharedMaterial.shader = pair.Value;
-                    if (originalRendererColors.TryGetValue(pair.Key, out Color origColor) && pair.Key.sharedMaterial.HasProperty("_Color"))
-                        pair.Key.sharedMaterial.color = origColor;
+                    material.shader = state.OriginalShader;
+                }
+
+                if (state.HasColor && material.HasProperty("_Color"))
+                {
+                    material.color = state.OriginalColor;
+                }
+
+                if (state.HasBaseColor && material.HasProperty("_BaseColor"))
+                {
+                    material.SetColor("_BaseColor", state.OriginalBaseColor);
                 }
             }
 
-            originalRendererShaders.Clear();
-            originalRendererColors.Clear();
+            originalMaterialStates.Clear();
 
             if (savedLighting)
             {
+                RenderSettings.fog = originalFog;
                 RenderSettings.fogColor = originalFogColor;
                 RenderSettings.ambientLight = originalAmbientLight;
+                savedLighting = false;
             }
         }
 

@@ -43,6 +43,7 @@ namespace ShibaGTGenesisReborn.Menu
             { // Advantages [2]
                 new ButtonInfo { buttonText = "Tag Gun", method =() => mods.TagGun(), isTogglable = true, toolTip = "Shoot tags"},
                 new ButtonInfo { buttonText = "Tag All", method =() => mods.TagAll(), isTogglable = true, toolTip = "Tags everyone"},
+                new ButtonInfo { buttonText = "Tag Self", method =() => mods.TagSelf(), isTogglable = false, toolTip = "Tag yourself"},
                 new ButtonInfo { buttonText = "Tag Aura", method =() => mods.TagAura(), isTogglable = true, toolTip = "Auto tag nearby uninfected monkeys"},
                 new ButtonInfo { buttonText = "Tag Assist", method =() => mods.TagAssist(), disableMethod =() => mods.tagAssistTarget = null, isTogglable = true, toolTip = "Blatantly snaps hands and pulls you towards nearest uninfected monkey"},
                 new ButtonInfo { buttonText = "No Tag On Join", method =() => mods.NoTagOnJoin(), isTogglable = true, toolTip = "No tag when joining"},
@@ -105,11 +106,12 @@ namespace ShibaGTGenesisReborn.Menu
 
             new ButtonInfo[]
             { // overpowered [8]
-                new ButtonInfo { buttonText = "Lag Gun", method =() => mods.LagGun(0.5f, 240), isTogglable = true, toolTip = "Lag target player with events"},
-                new ButtonInfo { buttonText = "Lag Gun v2", method =() => mods.LagGun(3f, 1000), isTogglable = true, toolTip = "Heavy lag target player"},
-                new ButtonInfo { buttonText = "Lag All", method =() => mods.LagAll(0.5f, 240), isTogglable = true, toolTip = "Lag all players in room"},
-                new ButtonInfo { buttonText = "Lag All v2", method =() => mods.LagAll(3f, 1000), isTogglable = true, toolTip = "Heavy lag all players in room"},
-                new ButtonInfo { buttonText = "Lag Spike Gun", method =() => mods.LagGun(8f, 3500), isTogglable = true, toolTip = "Massive lag spike at target"},
+                new ButtonInfo { buttonText = "Weak Lag Gun", method =() => mods.LagGun(0.5f, 300), isTogglable = true, toolTip = "Lag target player with events"},
+                new ButtonInfo { buttonText = "Weak Lag All", method =() => mods.LagAll(0.5f, 300), isTogglable = true, toolTip = "Lag all players in room"},
+                new ButtonInfo { buttonText = "Strong Lag Gun", method =() => mods.LagGun(3f, 1250), isTogglable = true, toolTip = "Heavy lag target player"},
+                new ButtonInfo { buttonText = "Strong Lag All", method =() => mods.LagAll(3f, 1250), isTogglable = true, toolTip = "Heavy lag all players in room"},
+                new ButtonInfo { buttonText = "Lag Spike Gun", method =() => mods.LagGun(8f, 5000), isTogglable = true, toolTip = "Massive lag spike at target"},
+                new ButtonInfo { buttonText = "Lag Spike Gun v2", method =() => mods.LagGun(10f, 5000), isTogglable = true, toolTip = "Massive lag spike at target"},
             },
 
             new ButtonInfo[]
@@ -137,6 +139,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Deep Voice Mic", method =() => mods.SetMicrophonePitch(0.6f), disableMethod =() => mods.ResetMicrophonePitch(), isTogglable = true, toolTip = "Deep voice modulation"},
                 new ButtonInfo { buttonText = "Fix Microphone", method =() => mods.FixMicrophone(), isTogglable = false, toolTip = "Reset and repair microphone settings"},
                 new ButtonInfo { buttonText = "Hear Self", method =() => mods.HearSelf(true), disableMethod =() => mods.HearSelf(false), isTogglable = true, toolTip = "Hear your own microphone live to test audio"},
+                new ButtonInfo { buttonText = "Noise Cancellation", method =() => mods.NoiseCancellation(), disableMethod =() => mods.DisableNoiseCancellation(), isTogglable = true, toolTip = "Gate out background noise via VAD threshold"},
                 new ButtonInfo { buttonText = "Waterbend", method =() => mods.WaterSplash(), isTogglable = true, toolTip = "Splash water around hands"},
                 new ButtonInfo { buttonText = "Splash Gun", method =() => mods.SplashGun(), isTogglable = true, toolTip = "Shoot water splashes at pointer"},
                 new ButtonInfo { buttonText = "Get Bracelet", method =() => mods.GetBracelet(), isTogglable = false, toolTip = "Equip right hand friendship bracelet"},
@@ -188,6 +191,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "B Disconnect", method =() => mods.BDisconnect(), enabled = false, isTogglable = true, toolTip = "Press B to leave"},
                 new ButtonInfo { buttonText = "Join Genesis", method =() => mods.Joincodegenesis(), enabled = false, isTogglable = false, toolTip = "Join Genesis"},
                 new ButtonInfo { buttonText = "Join Random Room", method =() => mods.JoinRandom(), enabled = false, isTogglable = false, toolTip = "Join random"},
+                new ButtonInfo { buttonText = "Create Room", method =() => mods.CreateRoom(), enabled = false, isTogglable = false, toolTip = "Create a public room"},
                 new ButtonInfo { buttonText = "Connect to Fastest Region", method =() => PhotonNetwork.ConnectToBestCloudServer(), enabled = false, isTogglable = false, toolTip = "Join US Central server"},
                 new ButtonInfo { buttonText = "Connect to US Central", method =() => mods.ConnectToRegion("us"), enabled = false, isTogglable = false, toolTip = "Join US Central server"},
                 new ButtonInfo { buttonText = "Connect to US West", method =() => mods.ConnectToRegion("usw"), enabled = false, isTogglable = false, toolTip = "Join US West server"},
@@ -199,6 +203,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Report All", method =() => mods.ReportAll(), enabled = false, isTogglable = false, toolTip = "Report all players"},
                 new ButtonInfo { buttonText = "Copy Identity", method =() => mods.CopyPlayerIdentity(), isTogglable = true, toolTip = "Shoot player to copy name and color"},
                 new ButtonInfo { buttonText = "Lobby Hop", method =() => mods.LobbyHop(), isTogglable = false, toolTip = "Disconnect and join new random room"},
+                new ButtonInfo { buttonText = "Rejoin Room", method =() => mods.RejoinRoom(), isTogglable = false, toolTip = "Reconnect to current room"},
             },
 
             new ButtonInfo[]

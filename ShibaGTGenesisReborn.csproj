@@ -8,6 +8,8 @@
 	  <EmbeddedResource Include="AssetBundles\gen" />
 	  <EmbeddedResource Include="AssetBundles\genesisingame" />
 	  <EmbeddedResource Include="Resources\pearl.png" />
+	  <EmbeddedResource Include="Resources\meta.png" />
+	  <EmbeddedResource Include="Resources\steam.png" />
 	  <Compile Remove="ascs\**" />
 	  <None Remove="ascs\**" /> <!-- assembly csharp decompiled for newest version so i can see what they changed -->
 	</ItemGroup>

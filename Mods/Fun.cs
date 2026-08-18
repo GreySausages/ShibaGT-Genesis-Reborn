@@ -1,5 +1,6 @@
 using GorillaLocomotion;
 using Photon.Pun;
+using Photon.Voice.Unity;
 using ShibaGTGenesisReborn.Libs;
 using ShibaGTGenesisReborn.Menu;
 using UnityEngine;

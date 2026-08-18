@@ -49,6 +49,27 @@ namespace ShibaGTGenesisReborn.Mods
             }
         }
 
+        public static void TagSelf()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            if (VRRig.LocalRig != null && !VRRig.LocalRig.mainSkin.material.name.Contains("fected"))
+            {
+                foreach (VRRig rig in VRRigCache.ActiveRigs)
+                {
+                    if (rig != null && !rig.isOfflineVRRig && rig.mainSkin.material.name.Contains("fected"))
+                    {
+                        bypasstp(rig.bodyTransform.position, true);
+                        break;
+                    }
+                }
+
+                if (PhotonNetwork.LocalPlayer != null)
+                {
+                    GameMode.ReportTag(PhotonNetwork.LocalPlayer);
+                }
+            }
+        }
+
         public static void NoTagOnJoin()
         {
             PlayerPrefs.SetString("didTutorial", "nope");

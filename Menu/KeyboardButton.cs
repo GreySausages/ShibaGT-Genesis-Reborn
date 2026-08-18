@@ -1,5 +1,6 @@
 using UnityEngine;
 using ShibaGTGenesisReborn.Menu;
+using ShibaGTGenesisReborn.Libs;
 
 namespace ShibaGTGenesisReborn.Classes
 {
@@ -39,7 +40,7 @@ namespace ShibaGTGenesisReborn.Classes
 
         void Update()
         {
-            if (isHovering && Main.trigger_Button)
+            if (isHovering && InputHandler.Instance.RightTrigger.IsPressed)
             {
                 if (key == "enter")
                 {

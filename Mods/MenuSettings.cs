@@ -173,7 +173,6 @@ namespace ShibaGTGenesisReborn.Mods
                             {
                                 notifcooldown = Time.time;
                                 NetworkSystem.Instance.ReturnToSinglePlayer();
-                                PhotonNetwork.Disconnect();
                                 return;
                             }
                         }

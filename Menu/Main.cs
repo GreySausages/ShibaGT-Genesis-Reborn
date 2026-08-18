@@ -17,6 +17,7 @@ using static ShibaGTGenesisReborn.Libs.GunLib;
 using static ShibaGTGenesisReborn.Menu.Buttons;
 using static ShibaGTGenesisReborn.Mods.mods;
 using static ShibaGTGenesisReborn.Settings;
+using Oculus.Interaction.DebugTree;
 
 namespace ShibaGTGenesisReborn.Menu
 {
@@ -33,13 +34,14 @@ namespace ShibaGTGenesisReborn.Menu
             MenuAudio.Initialize();
         }
 
+
+
         private void Update()
         {
             try
             {
                 bool toOpen = (!rightHanded && ControllerInputPoller.instance.leftControllerSecondaryButton) || (rightHanded && ControllerInputPoller.instance.rightControllerPrimaryButton);
                 bool keyboardOpen = UnityInput.Current.GetKey(keyboardButton);
-                trigger_Button = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightControllerIndexFloat > 0.5f;
                 InputHandler.Instance.RightGrip.IsPressed = Mouse.current.rightButton.isPressed ? Mouse.current.leftButton.isPressed : ControllerInputPoller.instance.rightGrab;
 
                 CacheObjects();
@@ -49,7 +51,7 @@ namespace ShibaGTGenesisReborn.Menu
                     cocHeading.GetComponent<TMP_Text>().text = $"<color=blue>ShibaGT Genesis Reborn v1</color>".ToUpper();
                     cocHeading.GetComponent<TMP_Text>().fontSize = 75f;
                     cocBody.GetComponent<TMP_Text>().richText = true;
-                    cocBody.GetComponent<TMP_Text>().text = "\nWelcome To ShibaGT Genesis Reborn!\nThis is a Remake of the Longest Lasting Paid Mod Menu Shiba GT Genesis!".ToUpper();
+                    cocBody.GetComponent<TMP_Text>().text = $"\nWelcome To ShibaGT Genesis Reborn!\nThis is a Remake of the Longest Lasting Paid Mod Menu Shiba GT Genesis!\nWe currently have <color=>{GetAllButtons().Length} total mods</color> right now".ToUpper();
                     motdHeading.GetComponent<TMP_Text>().text = "<color=blue>ShibaGT Genesis Reborn v1.0</color>".ToUpper();
                     motdBody.GetComponent<TMP_Text>().text = "Creditz To ShibaGT/TAI for making the original menu!\nThis is just a remake!\n<color=red>We Are Not Responsible For Any Bans Using This Mod Menu!</color>".ToUpper();
                 }
@@ -183,14 +185,12 @@ namespace ShibaGTGenesisReborn.Menu
             }
 
             CleanupResources();
-
             Instance = null;
         }
 
         public static bool what;
         public static Color what2 = Color.blue;
         public static bool what3;
-        public static bool trigger_Button = false;
         public static string searchQuery = "";
         public static bool isSearching = false;
         public static System.Collections.Generic.List<ButtonInfo> searchResults = new System.Collections.Generic.List<ButtonInfo>();

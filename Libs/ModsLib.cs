@@ -38,30 +38,30 @@ namespace ShibaGTGenesisReborn.Libs
         private static Texture2D enderPearlTexture;
         private static Material enderPearlMaterial;
 
-        public static Texture2D GetPearlTexture()
-        {
-            if (enderPearlTexture != null)
-            {
-                return enderPearlTexture;
-            }
+        private static Texture2D metaTexture;
+        private static Material metaMaterial;
+        private static Texture2D steamTexture;
+        private static Material steamMaterial;
 
+        public static Texture2D LoadTextureResource(string fileName)
+        {
             try
             {
                 var assembly = Assembly.GetExecutingAssembly();
                 string[] resourceNames = assembly.GetManifestResourceNames();
-                string pearlResource = resourceNames.FirstOrDefault(name => name.EndsWith("pearl.png", StringComparison.OrdinalIgnoreCase));
+                string resource = resourceNames.FirstOrDefault(name => name.EndsWith(fileName, StringComparison.OrdinalIgnoreCase));
 
-                if (!string.IsNullOrEmpty(pearlResource))
+                if (!string.IsNullOrEmpty(resource))
                 {
-                    using Stream stream = assembly.GetManifestResourceStream(pearlResource);
+                    using Stream stream = assembly.GetManifestResourceStream(resource);
                     if (stream != null)
                     {
                         byte[] buffer = new byte[stream.Length];
                         stream.Read(buffer, 0, buffer.Length);
-                        enderPearlTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        if (enderPearlTexture.LoadImage(buffer))
+                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        if (texture.LoadImage(buffer))
                         {
-                            return enderPearlTexture;
+                            return texture;
                         }
                     }
                 }
@@ -70,19 +70,19 @@ namespace ShibaGTGenesisReborn.Libs
 
             string[] candidatePaths = new[]
             {
-                Path.Combine(GenesisDirectory, "pearl.png"),
-                Path.Combine(GenesisDirectory, "Resources", "pearl.png"),
-                Path.Combine(Paths.PluginPath, "Genesis", "pearl.png"),
-                Path.Combine(Paths.PluginPath, "Resources", "pearl.png"),
-                Path.Combine(Paths.PluginPath, "pearl.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Genesis", "pearl.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "pearl.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "Genesis", "pearl.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "Resources", "pearl.png"),
-                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "pearl.png"),
-                "Resources/pearl.png",
-                "Resources\\pearl.png",
-                "pearl.png"
+                Path.Combine(GenesisDirectory, fileName),
+                Path.Combine(GenesisDirectory, "Resources", fileName),
+                Path.Combine(Paths.PluginPath, "Genesis", fileName),
+                Path.Combine(Paths.PluginPath, "Resources", fileName),
+                Path.Combine(Paths.PluginPath, fileName),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Genesis", fileName),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", fileName),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "Genesis", fileName),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", "Resources", fileName),
+                Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "BepInEx", "plugins", fileName),
+                "Resources/" + fileName,
+                "Resources\\" + fileName,
+                fileName
             };
 
             foreach (string path in candidatePaths)
@@ -92,14 +92,30 @@ namespace ShibaGTGenesisReborn.Libs
                     try
                     {
                         byte[] fileBytes = File.ReadAllBytes(path);
-                        enderPearlTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
-                        if (enderPearlTexture.LoadImage(fileBytes))
+                        Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false);
+                        if (texture.LoadImage(fileBytes))
                         {
-                            return enderPearlTexture;
+                            return texture;
                         }
                     }
                     catch { }
                 }
+            }
+
+            return null;
+        }
+
+        public static Texture2D GetPearlTexture()
+        {
+            if (enderPearlTexture != null)
+            {
+                return enderPearlTexture;
+            }
+
+            enderPearlTexture = LoadTextureResource("pearl.png");
+            if (enderPearlTexture != null)
+            {
+                return enderPearlTexture;
             }
 
             const int size = 64;
@@ -142,6 +158,56 @@ namespace ShibaGTGenesisReborn.Libs
             }
 
             return enderPearlMaterial;
+        }
+
+        public static Texture2D GetMetaTexture()
+        {
+            if (metaTexture != null)
+            {
+                return metaTexture;
+            }
+
+            metaTexture = LoadTextureResource("meta.png");
+            return metaTexture;
+        }
+
+        public static Material GetMetaMaterial()
+        {
+            if (metaMaterial == null)
+            {
+                Shader spriteShader = Shader.Find("Sprites/Default") ?? Shader.Find("GUI/Text Shader") ?? Shader.Find("Unlit/Transparent");
+                metaMaterial = new Material(spriteShader)
+                {
+                    mainTexture = GetMetaTexture()
+                };
+            }
+
+            return metaMaterial;
+        }
+
+        public static Texture2D GetSteamTexture()
+        {
+            if (steamTexture != null)
+            {
+                return steamTexture;
+            }
+
+            steamTexture = LoadTextureResource("steam.png");
+            return steamTexture;
+        }
+
+        public static Material GetSteamMaterial()
+        {
+            if (steamMaterial == null)
+            {
+                Shader spriteShader = Shader.Find("Sprites/Default") ?? Shader.Find("GUI/Text Shader") ?? Shader.Find("Unlit/Transparent");
+                steamMaterial = new Material(spriteShader)
+                {
+                    mainTexture = GetSteamTexture()
+                };
+            }
+
+            return steamMaterial;
         }
 
         public static GameObject CreatePearlVisual(string objectName, Vector3 initialPosition, float scale = 0.14f)

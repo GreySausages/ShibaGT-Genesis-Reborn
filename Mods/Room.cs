@@ -7,6 +7,7 @@ using ShibaGTGenesisReborn.Classes;
 using ShibaGTGenesisReborn.Libs;
 using System;
 using System.Collections;
+using System.Threading.Tasks;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -209,13 +210,37 @@ namespace ShibaGTGenesisReborn.Mods
             return Object.FindFirstObjectByType<GTRecorder>() ?? (Recorder)Object.FindFirstObjectByType<Recorder>();
         }
 
+        private static GTRecorder GetActiveGTRecorder(Recorder recorder = null)
+        {
+            if (recorder is GTRecorder gt) return gt;
+            if (recorder != null)
+            {
+                GTRecorder comp = recorder.GetComponent<GTRecorder>();
+                if (comp != null) return comp;
+            }
+            if (GorillaTagger.Instance?.myRecorder is GTRecorder myGt) return myGt;
+            if (GorillaTagger.Instance?.myRecorder != null)
+            {
+                GTRecorder comp = GorillaTagger.Instance.myRecorder.GetComponent<GTRecorder>();
+                if (comp != null) return comp;
+            }
+            if (NetworkSystem.Instance?.LocalRecorder is GTRecorder netGt) return netGt;
+            if (NetworkSystem.Instance?.LocalRecorder != null)
+            {
+                GTRecorder comp = NetworkSystem.Instance.LocalRecorder.GetComponent<GTRecorder>();
+                if (comp != null) return comp;
+            }
+            return Object.FindFirstObjectByType<GTRecorder>();
+        }
+
         public static void LoudMicrophone(float volumeMultiplier = 15f)
         {
             if (!NetworkSystem.Instance.InRoom) return;
             Recorder recorder = GetActiveRecorder();
             if (recorder == null) return;
 
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowVolumeAdjustment = true;
                 gtRecorder.VolumeAdjustment = volumeMultiplier;
@@ -231,7 +256,8 @@ namespace ShibaGTGenesisReborn.Mods
             Recorder recorder = GetActiveRecorder();
             if (recorder == null) return;
 
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowVolumeAdjustment = false;
                 gtRecorder.VolumeAdjustment = 1f;
@@ -247,7 +273,8 @@ namespace ShibaGTGenesisReborn.Mods
             Recorder recorder = GetActiveRecorder();
             if (recorder == null) return;
 
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowVolumeAdjustment = true;
                 gtRecorder.VolumeAdjustment = 0f;
@@ -268,7 +295,8 @@ namespace ShibaGTGenesisReborn.Mods
             Recorder recorder = GetActiveRecorder();
             if (recorder == null) return;
 
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowVolumeAdjustment = false;
                 gtRecorder.VolumeAdjustment = 1f;
@@ -306,8 +334,8 @@ namespace ShibaGTGenesisReborn.Mods
         public static void SetMicrophonePitch(float pitch)
         {
             if (!NetworkSystem.Instance.InRoom) return;
-            Recorder recorder = GetActiveRecorder();
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder();
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowPitchAdjustment = true;
                 gtRecorder.PitchAdjustment = pitch;
@@ -317,11 +345,66 @@ namespace ShibaGTGenesisReborn.Mods
         public static void ResetMicrophonePitch()
         {
             if (!NetworkSystem.Instance.InRoom) return;
-            Recorder recorder = GetActiveRecorder();
-            if (recorder is GTRecorder gtRecorder)
+            GTRecorder gtRecorder = GetActiveGTRecorder();
+            if (gtRecorder != null)
             {
                 gtRecorder.AllowPitchAdjustment = false;
                 gtRecorder.PitchAdjustment = 1f;
+            }
+        }
+
+        private static bool savedNoiseVoiceDetection;
+        private static float savedNoiseVoiceDetectionThreshold = 0.07f;
+        private static int savedNoiseVoiceDetectionDelayMs = 500;
+        private static int savedNoiseBitrate = 30000;
+        private static bool savedNoiseAllowVolume;
+        private static float savedNoiseVolume = 1f;
+
+        public static void NoiseCancellation()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null) return;
+
+            savedNoiseVoiceDetection = recorder.VoiceDetection;
+            savedNoiseVoiceDetectionThreshold = recorder.VoiceDetectionThreshold;
+            savedNoiseVoiceDetectionDelayMs = recorder.VoiceDetectionDelayMs;
+            savedNoiseBitrate = recorder.Bitrate;
+
+            recorder.VoiceDetection = true;
+            recorder.VoiceDetectionThreshold = 0.035f;
+            recorder.VoiceDetectionDelayMs = 150;
+            recorder.Bitrate = 64000;
+            recorder.TransmitEnabled = true;
+
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
+            {
+                savedNoiseAllowVolume = gtRecorder.AllowVolumeAdjustment;
+                savedNoiseVolume = gtRecorder.VolumeAdjustment;
+                gtRecorder.AllowVolumeAdjustment = false;
+                gtRecorder.VolumeAdjustment = 1f;
+                gtRecorder.AllowPitchAdjustment = false;
+                gtRecorder.PitchAdjustment = 1f;
+            }
+        }
+
+        public static void DisableNoiseCancellation()
+        {
+            if (!NetworkSystem.Instance.InRoom) return;
+            Recorder recorder = GetActiveRecorder();
+            if (recorder == null) return;
+
+            recorder.VoiceDetection = savedNoiseVoiceDetection;
+            recorder.VoiceDetectionThreshold = savedNoiseVoiceDetectionThreshold;
+            recorder.VoiceDetectionDelayMs = savedNoiseVoiceDetectionDelayMs;
+            recorder.Bitrate = savedNoiseBitrate;
+
+            GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+            if (gtRecorder != null)
+            {
+                gtRecorder.AllowVolumeAdjustment = savedNoiseAllowVolume;
+                gtRecorder.VolumeAdjustment = savedNoiseVolume;
             }
         }
 
@@ -343,7 +426,8 @@ namespace ShibaGTGenesisReborn.Mods
                 recorder.RecordOnlyWhenJoined = true;
                 recorder.StopRecordingWhenPaused = false;
 
-                if (recorder is GTRecorder gtRecorder)
+                GTRecorder gtRecorder = GetActiveGTRecorder(recorder);
+                if (gtRecorder != null)
                 {
                     gtRecorder.AllowVolumeAdjustment = false;
                     gtRecorder.VolumeAdjustment = 1f;
@@ -410,23 +494,58 @@ namespace ShibaGTGenesisReborn.Mods
             }, true);
         }
 
-        public static void LobbyHop()
+        public static async void LobbyHop()
         {
             if (PhotonNetworkController.Instance.currentJoinTrigger?.networkZone != null)
                 lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
 
-            PhotonNetwork.Disconnect();
-            NetworkSystem.Instance.ReturnToSinglePlayer();
-            GorillaTagger.Instance.StartCoroutine(LobbyHopRoutine());
+            await NetworkSystem.Instance.ReturnToSinglePlayer();
+            PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap ?? "forest"), GorillaNetworking.JoinType.Solo);
         }
 
-        private static IEnumerator LobbyHopRoutine()
+        public static async void RejoinRoom()
         {
-            while (NetworkSystem.Instance.InRoom || NetworkSystem.Instance.InRoom)
-                yield return null;
+            if (!NetworkSystem.Instance.InRoom) return;
 
-            yield return new WaitForSeconds(0.2f);
-            PhotonNetworkController.Instance.AttemptToJoinPublicRoom(GorillaComputer.instance.GetJoinTriggerForZone(lastmap ?? "forest"), GorillaNetworking.JoinType.Solo);
+            string roomName = NetworkSystem.Instance.RoomName;
+            RoomConfig config = NetworkSystem.Instance.CurrentRoom;
+
+            if (string.IsNullOrEmpty(roomName)) return;
+
+            await NetworkSystem.Instance.ReturnToSinglePlayer();
+
+            if (config != null)
+                await NetworkSystem.Instance.ConnectToRoom(roomName, config);
+            else
+                PhotonNetworkController.Instance.AttemptToJoinSpecificRoom(roomName, GorillaNetworking.JoinType.Solo);
+        }
+
+        public static async void CreateRoom()
+        {
+            if (PhotonNetworkController.Instance.currentJoinTrigger?.networkZone != null)
+                lastmap = PhotonNetworkController.Instance.currentJoinTrigger.networkZone;
+
+            if (NetworkSystem.Instance.InRoom)
+                await NetworkSystem.Instance.ReturnToSinglePlayer();
+
+            string roomName = NetworkSystem.GetRandomRoomName();
+            RoomConfig config = RoomConfig.AnyPublicConfig();
+
+            GorillaNetworkJoinTrigger joinTrigger = PhotonNetworkController.Instance.currentJoinTrigger ?? GorillaComputer.instance.GetJoinTriggerForZone(lastmap ?? "forest");
+            if (joinTrigger != null)
+            {
+                config.MaxPlayers = joinTrigger.GetRoomSize(false);
+                PhotonNetworkController.Instance.currentJoinTrigger = joinTrigger;
+                ExitGames.Client.Photon.Hashtable props = new ExitGames.Client.Photon.Hashtable();
+                props.Add("gameMode", joinTrigger.GetFullDesiredGameModeString());
+                props.Add("platform", PhotonNetworkController.Instance.platformTag);
+                props.Add("queueName", GorillaComputer.instance.currentQueue);
+                GorillaNetworking.ScheduledEvents.ScheduledEventMatchmaking.ApplyScheduledEventStateToHashes(props, out var searchFilter);
+                config.CustomProps = props;
+                config.SearchFilter = searchFilter;
+            }
+
+            await NetworkSystem.Instance.ConnectToRoom(roomName, config);
         }
     }
 }
