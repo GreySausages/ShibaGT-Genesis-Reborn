@@ -26,7 +26,8 @@ namespace ShibaGTGenesisReborn.Libs
                         return "uh oh!";
 
                     genesisDirectory = Path.Combine(rootDir, "Genesis");
-                    Directory.CreateDirectory(genesisDirectory);
+                    if (!Directory.Exists(genesisDirectory))
+                        Directory.CreateDirectory(genesisDirectory);
                 }
 
                 return genesisDirectory;
