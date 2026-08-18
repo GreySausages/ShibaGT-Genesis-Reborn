@@ -26,6 +26,8 @@ namespace ShibaGTGenesisReborn.Menu
         public static Main Instance { get; private set; }
 
         public static bool Loaded;
+        
+        public static bool Lockdown;
 
         private void Awake()
         {
@@ -38,6 +40,8 @@ namespace ShibaGTGenesisReborn.Menu
 
         private void Update()
         {
+            if (Lockdown) return;
+            
             try
             {
                 bool toOpen = (!rightHanded && ControllerInputPoller.instance.leftControllerSecondaryButton) || (rightHanded && ControllerInputPoller.instance.rightControllerPrimaryButton);
@@ -404,6 +408,8 @@ namespace ShibaGTGenesisReborn.Menu
 
         public static void CreateMenu()
         {
+            if (Lockdown) return;
+            
             menu = GameObject.CreatePrimitive(PrimitiveType.Cube);
             UnityEngine.Object.Destroy(menu.GetComponent<Rigidbody>());
             UnityEngine.Object.Destroy(menu.GetComponent<BoxCollider>());
