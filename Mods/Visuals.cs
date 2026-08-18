@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using GorillaLocomotion;
 using Photon.Pun;
 using Photon.Realtime;
@@ -220,26 +221,138 @@ namespace ShibaGTGenesisReborn.Mods
         }
 
         private static int cursedIndex;
-        private static readonly string[] cursedNames = { "1", "2", "3", "4", "Off" };
+        private static readonly string[] cursedNames = { "Void", "Glitch", "Blood", "Acid", "Off" };
+        private static readonly Dictionary<Renderer, Shader> originalRendererShaders = new Dictionary<Renderer, Shader>();
+        private static readonly Dictionary<Renderer, Color> originalRendererColors = new Dictionary<Renderer, Color>();
+        private static Color originalFogColor;
+        private static Color originalAmbientLight;
+        private static bool savedLighting;
 
         public static void CursedGTAG()
         {
             cursedIndex = (cursedIndex + 1) % cursedNames.Length;
-            Main.GetIndex("cursedgtag").overlapText = "Cursed Index: " + cursedNames[cursedIndex];
+            Main.GetIndex("cursedgtag").overlapText = "Cursed: " + cursedNames[cursedIndex];
 
-            if (BetterDayNightManager.instance == null)
-                return;
+            if (!savedLighting)
+            {
+                originalFogColor = RenderSettings.fogColor;
+                originalAmbientLight = RenderSettings.ambientLight;
+                savedLighting = true;
+            }
 
             if (cursedIndex == 4)
             {
-                BetterDayNightManager.instance.UnsetTimeIndexOverrideFunction();
+                FixShaders();
+                if (BetterDayNightManager.instance != null)
+                {
+                    BetterDayNightManager.instance.UnsetTimeIndexOverrideFunction();
+                    BetterDayNightManager.instance.UpdateTimeOfDay(true);
+                }
+                return;
             }
-            else
+
+            ApplyCursedShaders(cursedIndex);
+        }
+
+        private static void ApplyCursedShaders(int mode)
+        {
+            Shader textShader = Shader.Find("GUI/Text Shader");
+            Shader spritesShader = Shader.Find("Sprites/Default");
+            Shader unlitShader = Shader.Find("UI/Default") ?? Shader.Find("Standard");
+
+            Renderer[] allRenderers = Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
+
+            for (int i = 0; i < allRenderers.Length; i++)
             {
-                int target = cursedIndex;
-                BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => target);
+                Renderer renderer = allRenderers[i];
+                if (renderer == null || renderer.sharedMaterial == null)
+                    continue;
+
+                if (!originalRendererShaders.ContainsKey(renderer))
+                {
+                    originalRendererShaders[renderer] = renderer.sharedMaterial.shader;
+                    if (renderer.sharedMaterial.HasProperty("_Color"))
+                        originalRendererColors[renderer] = renderer.sharedMaterial.color;
+                }
+
+                switch (mode)
+                {
+                    case 0:
+                        renderer.sharedMaterial.shader = textShader;
+                        if (renderer.sharedMaterial.HasProperty("_Color"))
+                            renderer.sharedMaterial.color = new Color(0f, 0f, 0f, 0.9f);
+                        break;
+                    case 1:
+                        renderer.sharedMaterial.shader = (i % 2 == 0) ? textShader : spritesShader;
+                        if (renderer.sharedMaterial.HasProperty("_Color"))
+                            renderer.sharedMaterial.color = (i % 3 == 0) ? Color.magenta : ((i % 2 == 0) ? Color.cyan : Color.yellow);
+                        break;
+                    case 2:
+                        renderer.sharedMaterial.shader = textShader;
+                        if (renderer.sharedMaterial.HasProperty("_Color"))
+                            renderer.sharedMaterial.color = new Color(0.8f, 0f, 0f, 0.85f);
+                        break;
+                    case 3:
+                        renderer.sharedMaterial.shader = unlitShader;
+                        if (renderer.sharedMaterial.HasProperty("_Color"))
+                            renderer.sharedMaterial.color = Color.HSVToRGB((i * 0.05f) % 1f, 1f, 1f);
+                        break;
+                }
             }
-            BetterDayNightManager.instance.UpdateTimeOfDay(true);
+
+            if (BetterDayNightManager.instance != null)
+            {
+                switch (mode)
+                {
+                    case 0:
+                        BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => 3);
+                        RenderSettings.fog = true;
+                        RenderSettings.fogColor = Color.black;
+                        RenderSettings.ambientLight = Color.black;
+                        break;
+                    case 1:
+                        BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => 0);
+                        RenderSettings.fog = true;
+                        RenderSettings.fogColor = Color.magenta;
+                        RenderSettings.ambientLight = Color.cyan;
+                        break;
+                    case 2:
+                        BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => 2);
+                        RenderSettings.fog = true;
+                        RenderSettings.fogColor = new Color(0.5f, 0f, 0f);
+                        RenderSettings.ambientLight = Color.red;
+                        break;
+                    case 3:
+                        BetterDayNightManager.instance.SetTimeIndexOverrideFunction(_ => 1);
+                        RenderSettings.fog = true;
+                        RenderSettings.fogColor = Color.green;
+                        RenderSettings.ambientLight = Color.yellow;
+                        break;
+                }
+                BetterDayNightManager.instance.UpdateTimeOfDay(true);
+            }
+        }
+
+        private static void FixShaders()
+        {
+            foreach (var pair in originalRendererShaders)
+            {
+                if (pair.Key != null && pair.Key.sharedMaterial != null)
+                {
+                    pair.Key.sharedMaterial.shader = pair.Value;
+                    if (originalRendererColors.TryGetValue(pair.Key, out Color origColor) && pair.Key.sharedMaterial.HasProperty("_Color"))
+                        pair.Key.sharedMaterial.color = origColor;
+                }
+            }
+
+            originalRendererShaders.Clear();
+            originalRendererColors.Clear();
+
+            if (savedLighting)
+            {
+                RenderSettings.fogColor = originalFogColor;
+                RenderSettings.ambientLight = originalAmbientLight;
+            }
         }
 
         private static int timeOfDayIndex;
