@@ -71,6 +71,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Reverse Gravity", method =() => mods.GravityManager(mods.Gravitytypes.Reverse), disableMethod = () => mods.Reset_upsidedown(), isTogglable = true, toolTip = "Reverses gravity."},
                 new ButtonInfo { buttonText = "Up And Down", method =() => mods.UpAndDown(), isTogglable = true, toolTip = "RT to fly up, LT to fly down"},
                 new ButtonInfo { buttonText = "Slip Slap", method =() => mods.SlipSlap(), disableMethod =() => mods.UnSlipSlap(), isTogglable = true, toolTip = "Its just slip slap"},
+                new ButtonInfo { buttonText = "No Slip", method =() => mods.NoSlip(), disableMethod =() => mods.ReSlip(), isTogglable = true, toolTip = "Disable all slippery surfaces"},
                 new ButtonInfo { buttonText = "CheckPoint", method =() => mods.CheckPoint(), disableMethod =() => mods.CheckPointDisable(), isTogglable = true, toolTip = "RG to set checkpoint, A to teleport"},
                 new ButtonInfo { buttonText = "Legit Slide Control", method =() => mods.SlideControl(0.05f), disableMethod =() => mods.SlideControl(0.00425f), isTogglable = true, toolTip = "Slightly more slide control"},
                 new ButtonInfo { buttonText = "Blatant Slide Control", method =() => mods.SlideControl(0.08f), disableMethod =() => mods.SlideControl(0.00425f), isTogglable = true, toolTip = "High slide control"},

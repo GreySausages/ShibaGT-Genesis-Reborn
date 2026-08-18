@@ -1014,5 +1014,53 @@ namespace ShibaGTGenesisReborn.Mods
 
             _saved.Clear();
         }
+
+        private static readonly List<(GorillaSurfaceOverride surface, int originalIndex, float originalSlide)> savedSurfaces = new List<(GorillaSurfaceOverride, int, float)>();
+        private static float noSlipRefreshTimer;
+
+        public static void NoSlip()
+        {
+            if (savedSurfaces.Count == 0 || Time.time > noSlipRefreshTimer)
+            {
+                noSlipRefreshTimer = Time.time + 3f;
+                GorillaSurfaceOverride[] surfaces = Object.FindObjectsByType<GorillaSurfaceOverride>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                for (int i = 0; i < surfaces.Length; i++)
+                {
+                    GorillaSurfaceOverride surface = surfaces[i];
+                    if (surface != null && (surface.overrideIndex != 0 || surface.slidePercentageOverride > 0f))
+                    {
+                        bool alreadyTracked = false;
+                        for (int j = 0; j < savedSurfaces.Count; j++)
+                        {
+                            if (savedSurfaces[j].surface == surface)
+                            {
+                                alreadyTracked = true;
+                                break;
+                            }
+                        }
+
+                        if (!alreadyTracked)
+                            savedSurfaces.Add((surface, surface.overrideIndex, surface.slidePercentageOverride));
+
+                        surface.overrideIndex = 0;
+                        surface.slidePercentageOverride = 0.0001f;
+                    }
+                }
+            }
+        }
+
+        public static void ReSlip()
+        {
+            for (int i = 0; i < savedSurfaces.Count; i++)
+            {
+                var (surface, originalIndex, originalSlide) = savedSurfaces[i];
+                if (surface != null)
+                {
+                    surface.overrideIndex = originalIndex;
+                    surface.slidePercentageOverride = originalSlide;
+                }
+            }
+            savedSurfaces.Clear();
+        }
     }
 }

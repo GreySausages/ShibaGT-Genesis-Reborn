@@ -208,6 +208,7 @@ namespace ShibaGTGenesisReborn.Mods
             JesusMonkeDisable();
             ZiplineSpeed(10f);
             ResetStickyHands();
+            ReSlip();
             FixHead();
             NormalArms();
         }

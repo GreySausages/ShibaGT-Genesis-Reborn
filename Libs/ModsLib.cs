@@ -21,18 +21,13 @@ namespace ShibaGTGenesisReborn.Libs
             {
                 if (string.IsNullOrEmpty(genesisDirectory))
                 {
-                    string assemblyLocation = Assembly.GetExecutingAssembly().Location;
-                    string assemblyDir = !string.IsNullOrEmpty(assemblyLocation) ? Path.GetDirectoryName(assemblyLocation) : null;
-                    if (string.IsNullOrEmpty(assemblyDir))
-                    {
-                        assemblyDir = Paths.PluginPath;
-                    }
-                    if (string.IsNullOrEmpty(assemblyDir))
-                    {
-                        assemblyDir = AppDomain.CurrentDomain.BaseDirectory;
-                    }
+                    string rootDir = Paths.GameRootPath;
+                    if (string.IsNullOrEmpty(rootDir) || !Directory.Exists(rootDir))
+                        rootDir = AppDomain.CurrentDomain.BaseDirectory;
+                    if (string.IsNullOrEmpty(rootDir) || !Directory.Exists(rootDir))
+                        rootDir = Path.GetDirectoryName(Application.dataPath);
 
-                    genesisDirectory = Path.Combine(assemblyDir, "Genesis");
+                    genesisDirectory = Path.Combine(rootDir, "Genesis");
                 }
 
                 if (!Directory.Exists(genesisDirectory))
