@@ -21,17 +21,11 @@ namespace ShibaGTGenesisReborn.Libs
             {
                 if (string.IsNullOrEmpty(genesisDirectory))
                 {
-                    string rootDir = Paths.GameRootPath;
-                    if (string.IsNullOrEmpty(rootDir) || !Directory.Exists(rootDir))
-                        rootDir = AppDomain.CurrentDomain.BaseDirectory;
-                    if (string.IsNullOrEmpty(rootDir) || !Directory.Exists(rootDir))
-                        rootDir = Path.GetDirectoryName(Application.dataPath);
+                    string rootDir = Paths.GameRootPath ?? Directory.GetParent(Application.dataPath).FullName;
+                    if (!rootDir.Contains("Gorilla Tag"))
+                        return "uh oh!";
 
                     genesisDirectory = Path.Combine(rootDir, "Genesis");
-                }
-
-                if (!Directory.Exists(genesisDirectory))
-                {
                     Directory.CreateDirectory(genesisDirectory);
                 }
 
