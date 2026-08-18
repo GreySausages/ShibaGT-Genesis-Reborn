@@ -6,7 +6,11 @@ using Photon.Realtime;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
+using ShibaGTGenesisReborn.Menu;
 using UnityEngine;
 using UnityEngine.Animations.Rigging;
 using UnityEngine.Networking;
@@ -18,23 +22,43 @@ namespace CXS
     public class ServerData : MonoBehaviour
     {
         #region Configuration
-        public static readonly bool ServerDataEnabled = true;  // Disables CXS, telemetry, and admin panel
-        public static bool DisableTelemetry = false; // Disables telemetry data being sent to the server
+        public static readonly bool ServerDataEnabled = true;
+        public static bool DisableTelemetry = false;
 
-        // Warning: These endpoints should not be modified unless hosting a custom server. Use with caution.
         public const string ServerEndpoint = "https://www.tidalmenu.xyz/";
         public static readonly string ServerDataEndpoint = $"{ServerEndpoint}/serverdata";
 
-        // Do not change this unless you are hosting unofficial files for CXS
         public const string AssetsURL = "https://raw.githubusercontent.com/ImudTrust-Projects/CXS-AssetBundles/refs/heads/master/ServerData";
-
-        // The dictionary used to assign the admins only seen in your mod.
+        
         public static readonly Dictionary<string, string> LocalAdmins = new Dictionary<string, string>()
         {
-            // { "Placeholder Admin UserID", "Placeholder Admin Name" },
+            // We don't need to use this
         };
 
-        public static void SetupAdminPanel(string playerName) { } // Method used to spawn admin panel
+        public static void SetupAdminPanel(string playerName)
+        {
+            List<ButtonInfo> mainButtons = Buttons.buttons[0].ToList();
+
+            if (!mainButtons.Any(x => x.buttonText == "Admin"))
+            {
+                mainButtons.Add(new ButtonInfo
+                {
+                    buttonText = "Admin",
+                    method = () => Main.buttonsType = 16,
+                    isTogglable = false,
+                    toolTip = "Admin mods"
+                });
+            }
+
+            Buttons.buttons[0] = mainButtons.ToArray();
+
+            NotificationLib.SendNotification(
+                NotificationLib.NotificationType.Info,
+                "<color=purple>Console</color>\n" +
+                $"Hello {playerName}! Admin category has been added.",
+                5f
+            );
+        }
         #endregion
 
         #region Server Data Code

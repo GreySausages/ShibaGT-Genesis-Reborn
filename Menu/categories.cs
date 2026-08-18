@@ -111,6 +111,12 @@ namespace ShibaGTGenesisReborn.Menu
             buttonsType = 15;
             pageNumber = 0;
         }
+        
+        public static void adminmods()
+        {
+            buttonsType = 16;
+            pageNumber = 0;
+        }
 
         public static void ClearFavorites()
         {

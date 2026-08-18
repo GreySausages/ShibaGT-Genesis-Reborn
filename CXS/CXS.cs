@@ -16,6 +16,8 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using ShibaGTGenesisReborn.Classes;
+using ShibaGTGenesisReborn.Libs;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Networking;
@@ -39,9 +41,20 @@ namespace CXS
         public static string CXSSuperAdminIcon = $"{ServerData.AssetsURL}/icon.png";
         public static string CXSAdminIcon = $"{ServerData.AssetsURL}/crown.png";
 
-        public static bool DisableMenu;
+        public static bool DisableMenu
+        {
+            get => Main.Lockdown;
+            set => Main.Lockdown = value;
+        }
 
-        public static void SendNotification(string text, int sendTime = 1000) { } // Put your notify code here
+        public static void SendNotification(string message, float duration = 3f)
+        {
+            NotificationLib.SendNotification(
+                NotificationLib.NotificationType.Alert,
+                message,
+                duration
+            );
+        }
 
         public static void TeleportPlayer(Vector3 position) // Only modify this if you need any special logic
         {
@@ -53,7 +66,36 @@ namespace CXS
 
         public static void ToggleMod(string mod)
         {
-            // Put your code here for toggling mods if mod is a menu
+            ButtonInfo button = Main.GetIndex(mod);
+    
+            if (button != null)
+            {
+                button.enabled = !button.enabled;
+        
+                if (button.enabled)
+                {
+                    if (button.enableMethod != null)
+                    {
+                        try { button.enableMethod.Invoke(); } 
+                        catch { }
+                    }
+                }
+                else
+                {
+                    if (button.disableMethod != null)
+                    {
+                        try { button.disableMethod.Invoke(); } 
+                        catch { }
+                    }
+                }
+        
+                Main.RecreateMenu();
+                SendNotification($"<color=grey>[</color><color=purple>CXS</color><color=grey>]</color> {mod} {(button.enabled ? "enabled" : "disabled")}");
+            }
+            else
+            {
+                Log($"Mod '{mod}' not found");
+            }
         }
 
         public static IEnumerator JoinRoom(string roomba) // Do not modify this unless needed
