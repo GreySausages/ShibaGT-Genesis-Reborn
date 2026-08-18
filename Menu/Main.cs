@@ -115,23 +115,19 @@ namespace ShibaGTGenesisReborn.Menu
                     Loaded = true;
                 }
 
-                foreach (ButtonInfo[] buttonlist in buttons)
+                ButtonInfo[] activeButtons = GetAllButtons();
+                for (int i = 0; i < activeButtons.Length; i++)
                 {
-                    foreach (ButtonInfo v in buttonlist)
+                    ButtonInfo button = activeButtons[i];
+                    if (button.enabled && button.method != null)
                     {
-                        if (v.enabled)
+                        try
                         {
-                            if (v.method != null)
-                            {
-                                try
-                                {
-                                    v.method.Invoke();
-                                }
-                                catch (Exception exc)
-                                {
-                                    UnityEngine.Debug.LogError(string.Format("{0} // Error with mod {1} at {2}: {3}", PluginInfo.Name, v.buttonText, exc.StackTrace, exc.Message));
-                                }
-                            }
+                            button.method.Invoke();
+                        }
+                        catch (Exception exc)
+                        {
+                            UnityEngine.Debug.LogError(string.Format("{0} // Error with mod {1} at {2}: {3}", PluginInfo.Name, button.buttonText, exc.StackTrace, exc.Message));
                         }
                     }
                 }
@@ -204,6 +200,29 @@ namespace ShibaGTGenesisReborn.Menu
         public static GameObject lKey = null;
         public static GameObject rKey = null;
         public static System.Collections.Generic.List<ButtonInfo> favoriteButtons = new System.Collections.Generic.List<ButtonInfo>();
+
+        private static ButtonInfo[] allButtons;
+
+        private static ButtonInfo[] GetAllButtons()
+        {
+            if (allButtons != null)
+                return allButtons;
+
+            System.Collections.Generic.List<ButtonInfo> list = new System.Collections.Generic.List<ButtonInfo>();
+            for (int i = 0; i < buttons.Length; i++)
+            {
+                ButtonInfo[] category = buttons[i];
+                if (category == null) continue;
+                for (int j = 0; j < category.Length; j++)
+                {
+                    if (category[j] != null)
+                        list.Add(category[j]);
+                }
+            }
+
+            allButtons = list.ToArray();
+            return allButtons;
+        }
 
         public static void UpdateSearchDisplay()
         {

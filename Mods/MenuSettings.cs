@@ -61,23 +61,24 @@ namespace ShibaGTGenesisReborn.Mods
         {
             string prefsPath = Path.Combine(ModsLib.GenesisDirectory, "Genesis_Saved_Prefs.txt");
             List<string> list = new List<string>();
-            foreach (ButtonInfo[] btn1 in Buttons.buttons)
+
+            foreach (ButtonInfo[] buttonList in Buttons.buttons)
             {
-                foreach (ButtonInfo btn in btn1)
+                foreach (ButtonInfo btn in buttonList)
                 {
                     if (btn.enabled || btn.isFavorite)
                     {
                         list.Add(btn.isFavorite ? "fav" + btn.buttonText : btn.buttonText);
                     }
-                    Directory.CreateDirectory("Genesis");
-                    File.WriteAllLines(prefsPath, list);
                 }
             }
+
             if (Main.what)
             {
                 list.Add("SideMagfoar");
             }
-            Directory.CreateDirectory("Genesis");
+
+            Directory.CreateDirectory(ModsLib.GenesisDirectory);
             File.WriteAllLines(prefsPath, list);
         }
 

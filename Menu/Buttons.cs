@@ -104,7 +104,6 @@ namespace ShibaGTGenesisReborn.Menu
 
             new ButtonInfo[]
             { // overpowered [8]
-                new ButtonInfo { buttonText = "Party Gun", method =() => mods.PartyGun(), isTogglable = true, toolTip = "Form a party with the target player"},
                 new ButtonInfo { buttonText = "Lag Gun", method =() => mods.LagGun(0.5f, 240), isTogglable = true, toolTip = "Lag target player with events"},
                 new ButtonInfo { buttonText = "Lag Gun v2", method =() => mods.LagGun(3f, 1000), isTogglable = true, toolTip = "Heavy lag target player"},
                 new ButtonInfo { buttonText = "Lag All", method =() => mods.LagAll(0.5f, 240), isTogglable = true, toolTip = "Lag all players in room"},

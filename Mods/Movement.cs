@@ -556,16 +556,28 @@ namespace ShibaGTGenesisReborn.Mods
             }
         }
 
+        private static GorillaLocomotion.Gameplay.GorillaZipline[] cachedZiplines;
+        private static float ziplineCacheExpiry;
+
         public static void ZiplineSpeed(float speed)
         {
-            foreach (GorillaLocomotion.Gameplay.GorillaZipline zip in Object.FindObjectsByType<GorillaLocomotion.Gameplay.GorillaZipline>(FindObjectsSortMode.None))
+            if (cachedZiplines == null || Time.time > ziplineCacheExpiry)
             {
-                //if ()
-                if (zip.settings != null)
+                cachedZiplines = Object.FindObjectsByType<GorillaLocomotion.Gameplay.GorillaZipline>(FindObjectsSortMode.None);
+                ziplineCacheExpiry = Time.time + 5f;
+            }
+
+            float gravity = speed > 10f ? 3f : 1.1f;
+            float friction = speed > 10f ? 0.05f : 0.25f;
+
+            for (int i = 0; i < cachedZiplines.Length; i++)
+            {
+                GorillaLocomotion.Gameplay.GorillaZipline zip = cachedZiplines[i];
+                if (zip != null && zip.settings != null)
                 {
                     zip.settings.maxSpeed = speed;
-                    zip.settings.gravityMulti = speed > 10f ? 3f : 1.1f;
-                    zip.settings.friction = speed > 10f ? 0.05f : 0.25f;
+                    zip.settings.gravityMulti = gravity;
+                    zip.settings.friction = friction;
                 }
             }
         }
