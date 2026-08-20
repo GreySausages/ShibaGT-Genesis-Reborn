@@ -23,6 +23,7 @@ namespace ShibaGTGenesisReborn
         public static bool fpsCounter = true;
         public static bool disconnectButton = true;
         public static bool SettingsButton = true;
+        public static bool FolderButton = true;
         public static bool rightHanded = true;
         public static bool disableNotifications = true;
 

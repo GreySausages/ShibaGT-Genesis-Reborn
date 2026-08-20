@@ -406,6 +406,36 @@ namespace ShibaGTGenesisReborn.Menu
             r.material.color = color1;
         }
 
+        public static void OpenGenesisFolder()
+        {
+            try
+            {
+                string path = ModsLib.GenesisDirectory;
+                if (string.IsNullOrEmpty(path) || path == "uh oh!")
+                {
+                    NotificationLib.SendNotification(NotificationLib.NotificationType.Error, "Genesis path invalid");
+                    return;
+                }
+
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = path,
+                    UseShellExecute = true
+                });
+                NotificationLib.SendNotification(NotificationLib.NotificationType.Info, "Opened Genesis folder");
+            }
+            catch (Exception ex)
+            {
+                UnityEngine.Debug.LogError($"Failed to open Genesis folder: {ex.Message}");
+                NotificationLib.SendNotification(NotificationLib.NotificationType.Error, "Failed to open folder");
+            }
+        }
+
         public static void CreateMenu()
         {
             if (Lockdown) return;
@@ -633,6 +663,43 @@ namespace ShibaGTGenesisReborn.Menu
                 recct.localPosition = new Vector3(0.064f, -0.087f, -0.217f);
                 recct.sizeDelta = new Vector2(0.14f, 0.024f);
                 recct.rotation = Quaternion.Euler(new Vector3(180f, 90f, 90f));
+            }
+
+            if (FolderButton)
+            {
+                var folderBtn = GameObject.CreatePrimitive(PrimitiveType.Cube);
+
+                folderBtn.GetComponent<BoxCollider>().isTrigger = true;
+
+                folderBtn.transform.parent = menu.transform;
+                folderBtn.transform.rotation = Quaternion.identity;
+                folderBtn.transform.localScale = new Vector3(0.05f, 0.1f, 0.08f);
+                folderBtn.transform.localPosition = new Vector3(0.56f, -0.13f, -0.57f);
+
+                folderBtn.GetComponent<Renderer>().material.color = new Color(0.06f, 0.06f, 0.06f);
+                if (what3)
+                {
+                    OutlineObj(folderBtn, what2, what2, false);
+                }
+
+                folderBtn.AddComponent<Classes.Button>().relatedText = "GenesisFolder";
+
+                RawImage folderImg = new GameObject
+                {
+                    transform =
+                    {
+                        parent = canvasObject.transform
+                    }
+                }.AddComponent<RawImage>();
+
+                folderImg.texture = ModsLib.GetFolderTexture();
+                folderImg.color = textColors[0];
+
+                RectTransform folderRect = folderImg.GetComponent<RectTransform>();
+
+                folderRect.localPosition = new Vector3(0.064f, -0.04f, -0.217f);
+                folderRect.sizeDelta = new Vector2(0.024f, 0.024f);
+                folderRect.rotation = Quaternion.Euler(new Vector3(180f, 90f, 90f));
             }
 
             if (disconnectButton)
@@ -1134,6 +1201,10 @@ namespace ShibaGTGenesisReborn.Menu
             else if (buttonText == "Settings")
             {
                 SettingsMods.MenuSettings();
+            }
+            else if (buttonText == "GenesisFolder")
+            {
+                OpenGenesisFolder();
             }
             else if (buttonText == "Search")
             {

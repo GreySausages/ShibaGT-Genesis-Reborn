@@ -139,16 +139,8 @@ namespace ShibaGTGenesisReborn.Mods
 
         public static void SwitchPagePos()
         {
-            if (!Main.what)
-            {
-                Main.what = true;
-                Main.GetIndex("PPos").overlapText = "Menu Layout: Sides";
-            }
-            else
-            {
-                Main.what = false;
-                Main.GetIndex("PPos").overlapText = "Menu Layout: ShibaGT";
-            }
+            Main.what = !Main.what ? true : false;
+            Main.GetIndex("PPos").overlapText = Main.what ? "Menu Layout: Sides" : "Menu Layout: ShibaGT";
         }
 
         public static void ChangeOutlineColor()
@@ -160,25 +152,39 @@ namespace ShibaGTGenesisReborn.Mods
 
         public static void AntiReport()
         {
-            foreach (GorillaPlayerScoreboardLine boardline in GorillaScoreboardTotalUpdater.allScoreboardLines)
+            if (!NetworkSystem.Instance.InRoom || NetworkSystem.Instance.LocalPlayer == null) return;
+
+            NetPlayer localPlayer = NetworkSystem.Instance.LocalPlayer;
+            VRRig localRig = GorillaTagger.Instance.offlineVRRig;
+
+            foreach (var line in GorillaScoreboardTotalUpdater.allScoreboardLines)
             {
-                if (boardline.linePlayer != NetworkSystem.Instance.LocalPlayer || boardline.reportButton == null)
+                if (line?.linePlayer == null || (line.linePlayer != localPlayer && line.playerActorNumber != localPlayer.ActorNumber && line.linePlayer.UserId != localPlayer.UserId)) continue;
+
+                if (line.reportInProgress || (line.reportButton != null && line.reportButton.isOn) || (line.reportButtons != null && line.reportButtons.activeInHierarchy))
+                    Disconnect();
+
+                if (line.reportButton == null || !line.reportButton.gameObject.activeInHierarchy) continue;
+
+                Vector3 target = line.reportButton.transform.position;
+                foreach (VRRig rig in VRRigCache.ActiveRigs)
                 {
-                    Transform transform = boardline.reportButton.gameObject.transform;
-                    foreach (VRRig vrrig in VRRigCache.ActiveRigs)
-                    {
-                        if (vrrig == null || vrrig != GorillaTagger.Instance.offlineVRRig)
-                        {
-                            if (Vector3.Distance(vrrig.rightHandTransform.position, transform.position) < 0.4 || Vector3.Distance(vrrig.leftHandTransform.position, transform.position) < 0.4 && Time.time > notifcooldown + 1f)
-                            {
-                                notifcooldown = Time.time;
-                                NetworkSystem.Instance.ReturnToSinglePlayer();
-                                return;
-                            }
-                        }
-                    }
+                    if (rig == null || rig.isOfflineVRRig || rig.isMyPlayer || rig == localRig) continue;
+
+                    if ((rig.rightHandTransform != null && (rig.rightHandTransform.position - target).sqrMagnitude < 0.75f) ||
+                        (rig.leftHandTransform != null && (rig.leftHandTransform.position - target).sqrMagnitude < 0.75f) ||
+                        (rig.transform.position - target).sqrMagnitude < 1f)
+                        Disconnect();
                 }
             }
+        }
+
+        private static void Disconnect()
+        {
+            PhotonNetwork.Disconnect();
+            NetworkSystem.Instance.ReturnToSinglePlayer();
+            PhotonNetwork.SendAllOutgoingCommands();
+            NotificationLib.SendNotification(NotificationLib.NotificationType.Alert, "Anti Report disconnected you");
         }
 
         private static readonly List<ButtonInfo> panicSavedMods = new List<ButtonInfo>();

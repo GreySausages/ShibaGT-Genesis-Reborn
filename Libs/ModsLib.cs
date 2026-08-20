@@ -42,6 +42,7 @@ namespace ShibaGTGenesisReborn.Libs
         private static Material metaMaterial;
         private static Texture2D steamTexture;
         private static Material steamMaterial;
+        private static Texture2D folderTexture;
 
         public static Texture2D LoadTextureResource(string fileName)
         {
@@ -208,6 +209,17 @@ namespace ShibaGTGenesisReborn.Libs
             }
 
             return steamMaterial;
+        }
+
+        public static Texture2D GetFolderTexture()
+        {
+            if (folderTexture != null)
+            {
+                return folderTexture;
+            }
+
+            folderTexture = LoadTextureResource("folder.png");
+            return folderTexture;
         }
 
         public static GameObject CreatePearlVisual(string objectName, Vector3 initialPosition, float scale = 0.14f)

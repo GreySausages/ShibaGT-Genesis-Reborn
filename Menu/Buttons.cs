@@ -106,12 +106,9 @@ namespace ShibaGTGenesisReborn.Menu
 
             new ButtonInfo[]
             { // overpowered [8]
-                new ButtonInfo { buttonText = "Weak Lag Gun", method =() => mods.LagGun(0.5f, 300), isTogglable = true, toolTip = "Lag target player with events"},
-                new ButtonInfo { buttonText = "Weak Lag All", method =() => mods.LagAll(0.5f, 300), isTogglable = true, toolTip = "Lag all players in room"},
-                new ButtonInfo { buttonText = "Strong Lag Gun", method =() => mods.LagGun(3f, 1250), isTogglable = true, toolTip = "Heavy lag target player"},
-                new ButtonInfo { buttonText = "Strong Lag All", method =() => mods.LagAll(3f, 1250), isTogglable = true, toolTip = "Heavy lag all players in room"},
-                new ButtonInfo { buttonText = "Lag Spike Gun", method =() => mods.LagGun(8f, 5000), isTogglable = true, toolTip = "Massive lag spike at target"},
-                new ButtonInfo { buttonText = "Lag Spike Gun v2", method =() => mods.LagGun(10f, 5000), isTogglable = true, toolTip = "Massive lag spike at target"},
+                new ButtonInfo { buttonText = "lagpwr", overlapText = "Lag Power: Weak", method =() => mods.lagchange(), isTogglable = false, toolTip = "Lag target player with events"},
+                new ButtonInfo { buttonText = "Lag Gun", method =() => mods.LagGun(), isTogglable = true, toolTip = "Lag target player with events"},
+                new ButtonInfo { buttonText = "Lag All", method =() => mods.LagAll(), isTogglable = true, toolTip = "Lag all players in room"},
             },
 
             new ButtonInfo[]
@@ -119,6 +116,7 @@ namespace ShibaGTGenesisReborn.Menu
                 new ButtonInfo { buttonText = "Left Hand", enableMethod =() => SettingsMods.LeftHand(), disableMethod =() => SettingsMods.RightHand(), toolTip = "Toggle menu hand", enabled = !rightHanded},
                 new ButtonInfo { buttonText = "FPS Counter", enableMethod =() => SettingsMods.EnableFPSCounter(), disableMethod =() => SettingsMods.DisableFPSCounter(), enabled = fpsCounter, toolTip = "Show FPS counter"},
                 new ButtonInfo { buttonText = "Setting Button", enableMethod =() => SettingsButton = true, disableMethod =() => SettingsButton = false, enabled = SettingsButton, toolTip = "Show settings button"},
+                new ButtonInfo { buttonText = "Folder Button", enableMethod =() => FolderButton = true, disableMethod =() => FolderButton = false, enabled = FolderButton, toolTip = "Show folder button"},
                 new ButtonInfo { buttonText = "Leave Button", enableMethod =() => SettingsMods.EnableDisconnectButton(), disableMethod =() => SettingsMods.DisableDisconnectButton(), enabled = disconnectButton, toolTip = "Show disconnect button"},
                 new ButtonInfo { buttonText = "Remove All Prefs", method =() => mods.Removeprefs(), isTogglable = false, enabled = false, toolTip = "Reset saved preferences"},
                 new ButtonInfo { buttonText = "PPos", overlapText = "Menu Layout: ShibaGT", isTogglable = false, method =() => mods.SwitchPagePos(), enabled = false, toolTip = "Switch menu layout"},
